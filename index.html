@@ -1,0 +1,2570 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONLANG SportMagazin</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* ── Vereinsfarben (werden per JS aus Branding überschrieben) ── */
+  --primary:#F47A1F;
+  --primary-dark:#D95F0B;
+  --primary-dim:rgba(244,122,31,0.12);
+  --secondary:#F2B35E;
+
+  /* ── Vereins-TV Akzent ── */
+  --tv-accent:#F47A1F;
+  --tv-accent-dim:rgba(244,122,31,0.08);
+
+  /* ── Hintergründe (Navy) ── */
+  --bg:#071726;
+  --bg-soft:#0B1E2F;
+
+  /* ── Cards / Surfaces ── */
+  --card:#10263A;
+  --card-2:#162F46;
+  --card-3:#1B3A55;
+
+  /* ── Borders ── */
+  --border:rgba(255,255,255,.10);
+  --border-2:rgba(255,255,255,.16);
+  --border-3:rgba(255,255,255,.22);
+
+  /* ── Text ── */
+  --text:#F4F1EA;
+  --text-on-dark:#FFFFFF;
+  --muted:#C7CBD1;
+  --faint:#7F8B98;
+
+  /* ── Status ── */
+  --success:#22c55e;
+  --warning:#f59e0b;
+  --error:#ef4444;
+
+  /* ── Header (bleibt immer dunkel) ── */
+  --hdr-bg:#061421;
+  --hdr-text:#F4F1EA;
+  --hdr-text-dim:#C7CBD1;
+  --hdr-hover:rgba(255,255,255,.07);
+
+  /* ── Card-Schatten ── */
+  --card-shadow:0 2px 8px rgba(0,0,0,.25);
+
+  /* ── Schriften (werden per JS aus Settings überschrieben) ── */
+  --font-headline:'Oswald','Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --font-body:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;
+
+  /* ── Radius / Timing ── */
+  --r:8px; --rl:14px; --rx:20px; --round:999px;
+  --ease:0.2s ease; --mw:1320px;
+
+  /* ── Legacy-Aliases ── */
+  --dark:var(--bg);
+  --surface:var(--bg-soft);
+  --surface2:var(--card);
+  --surface3:var(--card-2);
+  --border2:var(--border-2);
+  --text-dim:var(--muted);
+  --text-faint:var(--faint);
+  --fd:var(--font-headline);
+  --fb:var(--font-body);
+}
+
+/* ══ THEME: HYBRID (heller Sport-Look) ══════════════════════
+   Aktivierung: <html data-theme="hybrid">
+   Wird per JS gesetzt wenn br.Theme === 'hybrid'
+═══════════════════════════════════════════════════════════ */
+[data-theme="hybrid"] {
+  /* Hintergründe */
+  --bg:#f0f0ee;
+  --bg-soft:#ffffff;
+
+  /* Cards */
+  --card:#ffffff;
+  --card-2:#f7f7f5;
+  --card-3:#efefed;
+
+  /* Borders */
+  --border:rgba(0,0,0,.09);
+  --border-2:rgba(0,0,0,.13);
+  --border-3:rgba(0,0,0,.18);
+
+  /* Text */
+  --text:#111111;
+  --muted:#555555;
+  --faint:#999999;
+
+  /* Card-Schatten */
+  --card-shadow:0 1px 4px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+
+  /* Legacy */
+  --dark:#111114;
+  --surface:#ffffff;
+  --surface2:#f7f7f5;
+  --surface3:#efefed;
+  --text-dim:#555555;
+  --text-faint:#999999;
+}
+
+/* ── Hybrid: Komponenten-Overrides ─────────────────────── */
+/* News-Cards: dunkler Text auf weißem Hintergrund */
+[data-theme="hybrid"] .nv-headline{color:var(--text);}
+[data-theme="hybrid"] .nv-teaser{color:var(--muted);}
+[data-theme="hybrid"] .nv-card:hover{border-color:var(--primary);box-shadow:0 4px 20px rgba(0,0,0,.12);}
+
+/* Sec-Titel: dunkler Text */
+[data-theme="hybrid"] .sec-title{color:var(--text);}
+[data-theme="hybrid"] .nv-title{color:var(--text);}
+[data-theme="hybrid"] .nv-subtitle{color:var(--muted);}
+
+/* Live-Leiste bleibt Vereinsfarbe (passt in beiden Themes) */
+
+/* Hero-Body: weißer Unterbereich heller */
+[data-theme="hybrid"] .hero-body{background:var(--card);}
+[data-theme="hybrid"] .hero-title{color:var(--text);}
+[data-theme="hybrid"] .hero-teaser{color:var(--muted);}
+
+/* Tabellen im hybrid */
+[data-theme="hybrid"] .sd-table td{color:var(--text);}
+[data-theme="hybrid"] .sd-table th{color:var(--muted);}
+[data-theme="hybrid"] .sd-wrap{background:var(--card);border-radius:var(--rl);}
+
+/* Team-Modal */
+[data-theme="hybrid"] #team-modal > div{background:var(--card);}
+
+/* Footer */
+[data-theme="hybrid"] .ftr{border-top:1px solid var(--border);background:var(--hdr-bg);}
+[data-theme="hybrid"] .ftr-name,[data-theme="hybrid"] .ftr-pw{color:var(--hdr-text-dim);}
+[data-theme="hybrid"] .ftr-pw a{color:var(--primary);}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
+a{color:inherit;text-decoration:none;}
+img{display:block;max-width:100%;}
+
+.wrap{max-width:var(--mw);margin:0 auto;padding:0 28px;}
+.sec{padding:64px 0;}
+.sec-sm{padding:24px 0;}
+
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.sec-title{font-family:var(--font-headline);font-size:22px;font-weight:600;text-transform:uppercase;letter-spacing:0;display:flex;align-items:center;gap:10px;}
+.sec-title::before{content:'';width:4px;height:24px;background:var(--primary);border-radius:2px;flex-shrink:0;}
+.sec-more{font-family:var(--fd);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary);}
+.sec-more:hover{opacity:.7;}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999;transition:opacity .4s;}
+#loader.hide{opacity:0;pointer-events:none;}
+.ld-logo{width:48px;height:48px;border-radius:var(--rl);background:var(--primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-headline);font-size:22px;font-weight:700;color:#fff;}
+.ld-bar{width:160px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.ld-fill{height:100%;background:var(--primary);animation:ldFill 1.4s ease-in-out infinite;}
+@keyframes ldFill{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+
+/* 1. SPORTBAND */
+.sportband{background:linear-gradient(90deg,var(--primary-dark),var(--primary),var(--primary-dark));height:44px;display:flex;align-items:center;overflow:hidden;position:relative;z-index:50;width:100%;}
+.sportband-label{background:rgba(0,0,0,.28);height:100%;display:flex;align-items:center;padding:0 18px;font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;white-space:nowrap;flex-shrink:0;gap:8px;}
+.sportband-dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:sb-blink 1.4s ease-in-out infinite;}
+@keyframes sb-blink{0%,100%{opacity:1}50%{opacity:.15}}
+.sportband-wrap{overflow:hidden;flex:1;cursor:default;}
+.sportband-track{display:flex;white-space:nowrap;animation:sb-roll 38s linear infinite;}
+.sportband-track:hover{animation-play-state:paused;}
+.sportband-item{display:inline-flex;align-items:center;gap:8px;padding:0 28px;height:44px;font-family:var(--font-body);font-size:15px;font-weight:600;color:#fff;border-right:1px solid rgba(255,255,255,.18);}
+.sportband-item a{color:#fff;text-decoration:none;}
+.sportband-item a:hover{text-decoration:underline;}
+.sportband-icon{font-size:14px;flex-shrink:0;}
+@keyframes sb-roll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@media(max-width:640px){.sportband{height:40px;}.sportband-item{font-size:13px;height:40px;padding:0 20px;}}
+
+/* 2. HEADER – bleibt in beiden Themes dunkel */
+.hdr{background:var(--hdr-bg);border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;z-index:200;}
+.hdr-in{max-width:var(--mw);margin:0 auto;padding:0 24px;height:66px;display:flex;align-items:center;gap:20px;}
+.hdr-brand{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.brand-logo{width:44px;height:44px;border-radius:var(--rl);object-fit:contain;background:rgba(255,255,255,.08);}
+.brand-ph{width:44px;height:44px;border-radius:var(--rl);background:var(--primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-headline);font-size:18px;font-weight:700;color:#fff;}
+.brand-name{font-family:var(--font-headline);font-size:19px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1.1;color:var(--hdr-text);}
+.brand-sub{font-family:var(--font-body);font-size:10px;font-weight:500;color:var(--primary);letter-spacing:.06em;text-transform:uppercase;}
+.hdr-nav{display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none;}
+.hdr-nav::-webkit-scrollbar{display:none;}
+.nav-a{font-family:var(--font-body);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--hdr-text-dim);padding:6px 14px;border-radius:var(--rl);white-space:nowrap;transition:color 150ms ease,background 150ms ease;}
+.nav-a:hover{color:var(--hdr-text);background:var(--hdr-hover);}
+.nav-a.on{color:var(--primary);}
+.hdr-btn{background:var(--primary);color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:9px 20px;border-radius:var(--rl);white-space:nowrap;flex-shrink:0;transition:background 150ms ease,transform 150ms ease;}
+.hdr-btn:hover{background:var(--primary-dark);transform:translateY(-1px);}
+.burger{display:none;flex-direction:column;gap:5px;padding:8px;flex-shrink:0;cursor:pointer;}
+.burger span{display:block;width:22px;height:2px;background:var(--hdr-text);border-radius:2px;}
+.mob-nav{display:none;flex-direction:column;background:var(--hdr-bg);border-bottom:1px solid rgba(255,255,255,.07);padding:12px 24px;gap:4px;}
+.mob-nav.open{display:flex;}
+.mob-nav .nav-a{font-size:15px;padding:10px 12px;}
+
+/* 3. HERO */
+/* 3. HERO – ONLANG Hero V1 – Bild oben, Text darunter */
+.hero-wrap{position:relative;width:100%;overflow:hidden;border-radius:var(--rx);background:var(--surface2);cursor:pointer;}
+.hero-img-wrap{width:100%;aspect-ratio:16/7;position:relative;overflow:hidden;background:var(--bg);}
+.hero-bg{width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:transform .6s ease;}
+.hero-bg.bild-foto{object-fit:cover;object-position:center;}
+.hero-bg.bild-grafik{object-fit:contain;object-position:center;background:var(--bg);}
+.hero-bg.bild-logo{object-fit:contain;object-position:center;background:var(--bg);padding:40px;}
+.hero-wrap:hover .hero-bg{transform:scale(1.02);}
+.hero-nopic{width:100%;aspect-ratio:16/7;display:flex;align-items:center;justify-content:center;font-size:100px;opacity:.05;}
+.hero-grad{display:none;}
+/* Text darunter */
+.hero-body{position:relative;padding:26px 28px 30px;background:var(--surface);}
+.hero-tag{display:inline-block;background:var(--primary);color:#fff;font-family:var(--font-body);font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 12px;border-radius:var(--round);margin-bottom:14px;}
+.hero-title{font-family:var(--font-headline);font-size:clamp(22px,2.6vw,38px);font-weight:500;text-transform:uppercase;line-height:1.14;letter-spacing:0;color:var(--text);margin-bottom:16px;white-space:normal;overflow-wrap:break-word;word-break:break-word;}
+.hero-teaser{font-size:15px;color:var(--muted);line-height:1.65;margin-bottom:24px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.hero-read{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;font-family:var(--font-headline);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:11px 24px;border-radius:var(--rl);transition:background var(--ease),transform 150ms ease,box-shadow 150ms ease;}
+.hero-read:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.28);}
+.hero-meta{display:flex;gap:12px;margin-top:14px;font-family:var(--font-body);font-size:11px;font-weight:500;letter-spacing:.03em;color:var(--muted);}
+/* Side-Panel (Magazine-Layout, optional) */
+.hero-grid{display:grid;grid-template-columns:1fr 320px;gap:3px;background:var(--border);border-radius:var(--rx);overflow:hidden;}
+.hero-grid.no-side{display:block;background:none;}
+.hero-main{}
+.hero-side{display:flex;flex-direction:column;gap:3px;background:var(--border);}
+.hero-sc{background:var(--surface);flex:1;padding:16px 18px;cursor:pointer;display:flex;flex-direction:column;gap:8px;border-left:3px solid transparent;transition:background var(--ease),border-color var(--ease);}
+.hero-sc:hover{background:var(--surface2);border-left-color:var(--primary);}
+.hero-si{width:100%;aspect-ratio:16/7;object-fit:cover;border-radius:var(--r);}
+.hero-si-ph{width:100%;aspect-ratio:16/7;background:var(--surface3);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.25;}
+.hero-stag{font-family:var(--fb);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--primary);}
+.hero-stitle{font-family:var(--fd);font-size:15px;font-weight:800;text-transform:uppercase;line-height:1.15;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.hero-sdate{font-size:11px;color:var(--text-faint);margin-top:auto;font-family:var(--fd);letter-spacing:.05em;}
+
+/* 4. TEAMS */
+.teams-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;}
+.teams-row::-webkit-scrollbar{display:none;}
+.team-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;}
+.team-ring{width:80px;height:80px;border-radius:50%;padding:3px;background:var(--surface3);transition:background 180ms ease,box-shadow 180ms ease;}
+.team-chip:hover .team-ring,.team-chip.on .team-ring{background:linear-gradient(135deg,var(--primary),#ff8800);}
+.team-in{width:100%;height:100%;border-radius:50%;background:var(--surface2);border:2px solid var(--dark);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font-headline);font-weight:600;font-size:22px;color:var(--primary);}
+.team-in img{width:100%;height:100%;object-fit:cover;}
+.team-n{font-family:var(--fb);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--text-dim);text-align:center;max-width:80px;line-height:1.2;}
+.team-chip:hover .team-n,.team-chip.on .team-n{color:var(--primary);}
+
+/* 5. VERANSTALTUNGEN */
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.ev-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;cursor:pointer;display:flex;gap:0;transition:border-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;}
+.ev-card:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.15);}
+.ev-date{background:var(--primary);width:64px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 8px;}
+.ev-day{font-family:var(--font-headline);font-size:28px;font-weight:600;color:var(--text-on-dark);line-height:1;}
+.ev-mon{font-family:var(--fd);font-size:11px;font-weight:700;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.08em;}
+.ev-body{padding:14px 16px;display:flex;flex-direction:column;gap:4px;}
+.ev-art{font-family:var(--fb);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--primary);}
+.ev-title{font-family:var(--fd);font-size:15px;font-weight:800;text-transform:uppercase;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ev-text{font-size:12px;color:var(--text-dim);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* 6. TV */
+/* ══ VEREINS-TV V1 ══ */
+.tv-sec{background:var(--bg);padding:60px 0;}
+.tv-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.tv-brand{display:flex;align-items:center;gap:14px;}
+.tv-icon{width:44px;height:44px;background:var(--tv-accent);border-radius:var(--rl);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.tv-name{font-family:var(--font-headline);font-size:26px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text);}
+.tv-name span{color:var(--tv-accent);}
+/* Haupt-Layout: links großes Video + Thumbnails, rechts Playlist */
+.tv-layout{display:grid;grid-template-columns:1fr 300px;gap:0;border-radius:var(--rx);overflow:hidden;border:1px solid var(--border);background:var(--surface);}
+.tv-main{display:flex;flex-direction:column;}
+.tv-player{aspect-ratio:16/9;background:var(--bg);width:100%;position:relative;}
+.tv-player iframe{display:block;width:100%;height:100%;}
+.tv-player-nopic{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:60px;opacity:.1;}
+.tv-main-info{padding:18px 22px;background:var(--surface);border-top:1px solid var(--border);}
+.tv-main-kat{font-family:var(--font-body);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tv-accent);margin-bottom:6px;}
+.tv-main-title{font-family:var(--font-headline);font-size:17px;font-weight:700;text-transform:uppercase;line-height:1.2;color:var(--text);margin-bottom:4px;}
+.tv-main-date{font-size:11px;color:var(--faint);}
+/* Thumbnails unter dem Hauptvideo */
+.tv-thumbs{display:flex;gap:8px;padding:12px 20px 16px;background:var(--surface);border-top:1px solid var(--border);overflow-x:auto;scrollbar-width:none;}
+.tv-thumbs::-webkit-scrollbar{display:none;}
+.tv-thumb-item{flex-shrink:0;width:120px;cursor:pointer;border-radius:var(--r);overflow:hidden;border:2px solid transparent;transition:border-color 150ms ease;}
+.tv-thumb-item:hover,.tv-thumb-item.active{border-color:var(--tv-accent);}
+.tv-thumb-item img{width:120px;height:68px;object-fit:cover;display:block;}
+.tv-thumb-item-ph{width:120px;height:68px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:20px;opacity:.3;}
+/* Rechte Playlist */
+.tv-playlist{background:var(--surface2);border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;max-height:600px;}
+.tv-playlist-head{padding:14px 16px;font-family:var(--font-body);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);border-bottom:1px solid var(--border);flex-shrink:0;}
+.tv-playlist-list{overflow-y:auto;flex:1;scrollbar-width:thin;}
+.tv-playlist-item{display:flex;gap:10px;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 150ms ease;align-items:flex-start;}
+.tv-playlist-item:hover,.tv-playlist-item.active{background:var(--tv-accent-dim);}
+.tv-playlist-item.active .tv-pl-num{font-size:10px;font-weight:700;color:var(--text-faint);width:18px;flex-shrink:0;padding-top:2px;}
+.tv-pl-thumb{width:72px;height:40px;object-fit:cover;border-radius:var(--r);flex-shrink:0;background:var(--surface3);}
+.tv-pl-thumb-ph{width:72px;height:40px;background:var(--surface3);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:16px;opacity:.3;flex-shrink:0;}
+.tv-pl-info{flex:1;min-width:0;}
+.tv-pl-kat{font-family:var(--font-body);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tv-accent);margin-bottom:3px;}
+.tv-pl-title{font-size:12px;font-weight:700;color:var(--text);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tv-pl-date{font-size:10px;color:var(--text-faint);margin-top:3px;}
+/* Responsive */
+@media(max-width:768px){
+  .tv-layout{grid-template-columns:1fr;}
+  .tv-playlist{max-height:300px;border-left:none;border-top:1px solid var(--border);}
+}
+
+/* 7. NEWS */
+.news-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.nc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rx);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:border-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;box-shadow:var(--card-shadow);}
+.nc:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.15);}
+.nc-img{width:100%;aspect-ratio:16/9;object-fit:cover;}
+.nc-ph{width:100%;aspect-ratio:16/9;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px;opacity:.15;}
+.nc-body{padding:18px;flex:1;display:flex;flex-direction:column;gap:8px;}
+.nc-art{font-family:var(--font-body);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary);}
+.nc-title{font-family:var(--font-headline);font-size:16px;font-weight:500;text-transform:uppercase;line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.nc-teaser{font-size:13px;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.nc-date{font-size:11px;color:var(--faint);margin-top:auto;font-family:var(--font-body);letter-spacing:.02em;}
+
+/* NEWS CARDS V1 */
+.nv-section{padding:72px 0 56px;background:var(--dark);}
+.nv-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:36px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+.nv-title-wrap{display:flex;flex-direction:column;gap:4px;}
+.nv-title{font-family:var(--font-headline);font-size:26px;font-weight:600;text-transform:uppercase;letter-spacing:0;display:flex;align-items:center;gap:10px;}
+.nv-title::before{content:'';width:4px;height:30px;background:var(--primary);border-radius:2px;flex-shrink:0;}
+.nv-subtitle{font-size:12px;color:var(--text-faint);padding-left:14px;letter-spacing:.04em;}
+.nv-more{font-family:var(--fd);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary);white-space:nowrap;}
+.nv-more:hover{opacity:.7;}
+.nv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;align-items:stretch;}
+.nv-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rx);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;height:100%;transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease;box-shadow:var(--card-shadow);}
+.nv-card:hover{transform:translateY(-5px);border-color:var(--primary);box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.nv-img-wrap{position:relative;flex-shrink:0;}
+.nv-img{width:100%;height:220px;object-fit:cover;display:block;}
+.nv-ph{width:100%;height:220px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:40px;opacity:.15;}
+.nv-vid-badge{position:absolute;top:12px;right:12px;background:rgba(200,0,0,.9);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:#fff;display:flex;align-items:center;gap:4px;}
+.nv-body{padding:22px 20px 20px;flex:1;display:flex;flex-direction:column;}
+.nv-meta{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.nv-cat{display:inline-block;background:var(--primary);color:#fff;font-family:var(--font-body);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:20px;}
+.nv-date{font-family:var(--font-body);font-size:11px;font-weight:500;letter-spacing:.01em;color:var(--muted);}
+.nv-headline{font-family:var(--font-headline);font-size:19px;font-weight:500;text-transform:uppercase;line-height:1.2;color:var(--text-on-dark);margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.nv-teaser{font-size:13px;line-height:1.6;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1;}
+.nv-link{display:inline-flex;align-items:center;gap:5px;margin-top:18px;color:var(--primary);font-family:var(--font-body);font-size:12px;font-weight:600;letter-spacing:.01em;transition:gap 150ms ease;}
+.nv-link:hover{gap:9px;}
+
+/* 8. PARTNER & SPONSOREN V2 */
+/* Premium-Partner */
+.sp-premium{display:flex;align-items:center;gap:28px;padding:28px 32px;background:var(--card);border:1px solid var(--border-2);border-radius:20px;margin-bottom:24px;flex-wrap:wrap;position:relative;overflow:hidden;}
+.sp-premium::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--primary-dim) 0%,transparent 60%);pointer-events:none;}
+.sp-premium-badge{position:absolute;top:14px;right:16px;background:var(--primary);color:#fff;font-family:var(--font-body);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:var(--round);}
+.sp-premium-logo{width:100px;height:100px;object-fit:contain;border-radius:var(--rl);background:var(--card-2);padding:8px;flex-shrink:0;}
+.sp-premium-logo-ph{width:100px;height:100px;border-radius:var(--rl);background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;}
+.sp-premium-body{flex:1;min-width:0;}
+.sp-premium-lbl{font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);margin-bottom:6px;}
+.sp-premium-name{font-family:var(--font-headline);font-size:28px;font-weight:600;text-transform:uppercase;letter-spacing:0;color:var(--text);line-height:1.1;margin-bottom:8px;}
+.sp-premium-desc{font-size:16px;color:var(--muted);line-height:1.55;margin-bottom:14px;}
+.sp-premium-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.sp-premium-btn{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;padding:9px 20px;border-radius:var(--rl);transition:background 150ms ease,transform 150ms ease;}
+.sp-premium-btn:hover{background:var(--primary-dark);transform:translateY(-1px);}
+.sp-premium-soc{display:flex;gap:8px;}
+.sp-premium-soc a{width:34px;height:34px;background:var(--card-2);border:1px solid var(--border);border-radius:var(--rl);display:flex;align-items:center;justify-content:center;font-size:14px;transition:border-color 180ms ease,background 180ms ease;}
+.sp-premium-soc a:hover{border-color:var(--primary);background:var(--primary-dim);}
+/* Partner-Grid */
+.sp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.sp-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px;position:relative;transition:transform 180ms ease,box-shadow 180ms ease,border-color 180ms ease;}
+.sp-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.25);border-color:var(--border-2);}
+.sp-card-badge{position:absolute;top:12px;right:12px;font-family:var(--font-body);font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:var(--round);}
+.sp-card-badge.gold{background:rgba(234,179,8,.15);color:#eab308;}
+.sp-card-badge.silber{background:rgba(148,163,184,.15);color:#94a3b8;}
+.sp-card-badge.bronze{background:rgba(180,83,9,.15);color:#b45309;}
+.sp-card-logo{width:80px;height:80px;object-fit:contain;border-radius:var(--r);background:var(--card-2);padding:6px;}
+.sp-card-logo-ph{width:80px;height:80px;border-radius:var(--r);background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:28px;}
+.sp-card-name{font-family:var(--font-headline);font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:0;color:var(--text);}
+.sp-card-desc{font-size:14px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.sp-card-footer{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.sp-card-btn{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-body);font-size:12px;font-weight:700;color:var(--primary);transition:gap 150ms ease;}
+.sp-card-btn:hover{gap:9px;}
+.sp-card-soc{display:flex;gap:6px;}
+.sp-card-soc a{width:28px;height:28px;background:var(--card-2);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;transition:border-color 180ms ease;}
+.sp-card-soc a:hover{border-color:var(--primary);}
+
+/* Mitgliedsvereine / Downloads – nutzt dieselben Design-Tokens wie sp-card */
+.mv-card{flex:0 0 auto;width:150px;background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;transition:transform 180ms ease,border-color 180ms ease;font-family:inherit;color:inherit;}
+.mv-card:hover{transform:translateY(-4px);border-color:var(--border-2);}
+.mv-card-logo{width:56px;height:56px;border-radius:50%;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:24px;}
+.mv-card-name{font-family:var(--font-headline);font-size:13px;font-weight:600;text-transform:uppercase;color:var(--text);}
+
+/* Hero Phase 2 – zweispaltig, gleiche Tokens wie der Rest der Seite */
+.bbk-hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;padding:24px 0 8px;}
+@media(max-width:900px){.bbk-hero-grid{grid-template-columns:1fr;}.bbk-hero-right{order:-1;}}
+.bbk-hero-stats{display:flex;gap:28px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:20px;}
+.bbk-hero-stat-num{font-family:var(--font-headline);font-size:24px;font-weight:700;color:var(--primary);line-height:1.1;}
+.bbk-hero-stat-lbl{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* Flow-Diagramm – Platzhalter fuer spaetere Plattformgrafik */
+.flow-diagram{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.flow-step{font-family:var(--font-headline);font-size:13px;font-weight:600;text-transform:uppercase;text-align:center;padding:10px 18px;border-radius:var(--r);width:100%;}
+.flow-step-main{background:var(--card-2);color:var(--text);}
+.flow-step-brand{background:var(--primary);color:#fff;font-size:15px;}
+.flow-step-ki{background:var(--card-2);color:var(--primary);border:1px dashed var(--primary);}
+.flow-connector{color:var(--muted);font-size:14px;line-height:1;}
+.flow-branches{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;}
+.flow-step-sm{background:var(--card-2);color:var(--muted);font-size:11px;padding:8px 6px;border-radius:var(--r);}
+/* Responsive */
+@media(max-width:1024px){.sp-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.sp-grid{grid-template-columns:1fr;}.sp-premium{flex-direction:column;align-items:flex-start;}.sp-card-btn{width:100%;justify-content:center;}.sp-premium-btn{width:100%;justify-content:center;}}
+
+/* 9. KONTAKT */
+.ko-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.ko-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rx);padding:28px;box-shadow:var(--card-shadow);}
+.ko-icon{font-size:26px;margin-bottom:12px;}
+.ko-lbl{font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.ko-val{font-size:14px;color:var(--text);line-height:1.65;}
+.ko-val a{color:var(--primary);}
+.soc-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.soc-a{width:40px;height:40px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rl);display:flex;align-items:center;justify-content:center;font-size:16px;transition:border-color 150ms ease,background 150ms ease;}
+.soc-a:hover{border-color:var(--primary);background:var(--primary-dim);}
+
+/* 10. APP */
+.app-sec{background:linear-gradient(135deg,var(--surface) 0%,var(--dark) 100%);border-top:1px solid var(--border);}
+.app-in{display:grid;grid-template-columns:1fr auto;gap:48px;align-items:center;}
+.app-ey{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:10px;}
+.app-title{font-family:var(--font-headline);font-size:clamp(28px,3.5vw,44px);font-weight:600;text-transform:uppercase;line-height:1.08;letter-spacing:0;margin-bottom:12px;}
+.app-sub{font-size:15px;color:var(--text-dim);line-height:1.6;max-width:480px;margin-bottom:24px;}
+.app-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px;}
+.app-btn{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border-2);border-radius:var(--rx);padding:14px 22px;transition:border-color 150ms ease,background 150ms ease;}
+.app-btn:hover{border-color:var(--primary);background:var(--primary-dim);}
+.app-btn-ico{font-size:26px;}
+.app-btn-lbl{font-size:10px;color:var(--muted);font-weight:500;}
+.app-btn-store{font-family:var(--font-headline);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.app-direct{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;font-family:var(--font-headline);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:13px 26px;border-radius:var(--rl);transition:background 150ms ease,transform 150ms ease;}
+.app-direct:hover{background:var(--primary-dark);transform:translateY(-1px);}
+.app-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0;}
+.app-qr{width:140px;height:140px;background:var(--text-on-dark);border-radius:var(--rx);display:flex;align-items:center;justify-content:center;padding:12px;}
+.app-qr-lbl{font-size:11px;color:var(--faint);text-align:center;font-family:var(--font-body);letter-spacing:.04em;text-transform:uppercase;}
+
+/* ── APP-BEREICH ─────────────────────────────────────── */
+.app-sec{background:linear-gradient(135deg,var(--bg-soft) 0%,var(--bg) 100%);border-top:1px solid var(--border);padding:80px 0;}
+.app-in{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;max-width:var(--mw);margin:0 auto;padding:0 28px;}
+.app-left{}
+.app-eyebrow{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);margin-bottom:12px;}
+.app-headline{font-family:var(--font-headline);font-size:clamp(28px,3.5vw,48px);font-weight:600;text-transform:uppercase;line-height:1.08;letter-spacing:0;color:var(--text);margin-bottom:16px;}
+.app-headline span{color:var(--primary);}
+.app-desc{font-size:16px;color:var(--muted);line-height:1.65;margin-bottom:28px;max-width:480px;}
+.app-features{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;}
+.app-feature{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--muted);}
+.app-feature-icon{width:32px;height:32px;border-radius:8px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.app-feature-text{font-weight:500;}
+.app-cta-wrap{display:flex;flex-direction:column;gap:12px;}
+.app-cta-btns{display:flex;gap:12px;flex-wrap:wrap;}
+.app-store-btn{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border-2);border-radius:var(--rx);padding:12px 20px;transition:border-color 150ms ease,background 150ms ease,transform 150ms ease;}
+.app-store-btn:hover{border-color:var(--primary);background:var(--primary-dim);transform:translateY(-2px);}
+.app-store-ico{font-size:24px;}
+.app-store-lbl{font-size:10px;color:var(--muted);font-weight:500;}
+.app-store-name{font-family:var(--font-headline);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text);}
+.app-direct-btn{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;font-family:var(--font-headline);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:14px 28px;border-radius:var(--rl);transition:background 150ms ease,transform 150ms ease;}
+.app-direct-btn:hover{background:var(--primary-dark);transform:translateY(-2px);}
+.app-right{display:flex;flex-direction:column;align-items:center;gap:24px;}
+.app-mockup{width:100%;max-width:320px;aspect-ratio:9/16;background:var(--card);border:1px solid var(--border-2);border-radius:32px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.4);}
+.app-mockup-inner{width:88%;height:92%;background:var(--bg);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;}
+.app-mockup-logo{width:56px;height:56px;border-radius:16px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-headline);font-size:22px;font-weight:700;color:#fff;}
+.app-mockup-name{font-family:var(--font-headline);font-size:16px;font-weight:600;text-transform:uppercase;color:var(--text);text-align:center;}
+.app-mockup-sub{font-size:11px;color:var(--faint);text-align:center;line-height:1.4;}
+.app-mockup-bars{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:8px;}
+.app-mockup-bar{height:8px;background:var(--card-2);border-radius:4px;}
+.app-mockup-bar:nth-child(1){width:100%;}
+.app-mockup-bar:nth-child(2){width:75%;}
+.app-mockup-bar:nth-child(3){width:88%;}
+.app-qr-block{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.app-qr-box{width:200px;height:200px;background:#fff;border-radius:var(--rl);display:flex;align-items:center;justify-content:center;padding:8px;}
+.app-qr-label{font-size:11px;color:var(--faint);text-align:center;letter-spacing:.04em;text-transform:uppercase;}
+
+/* ── KONTAKT V2 ──────────────────────────────────────── */
+.ko-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch;}
+.ko-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;display:flex;flex-direction:column;gap:0;transition:border-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;}
+.ko-card:hover{border-color:var(--border-2);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.2);}
+.ko-card-icon{width:48px;height:48px;border-radius:14px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px;}
+.ko-card-title{font-family:var(--font-headline);font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:0;color:var(--text);margin-bottom:8px;}
+.ko-card-content{font-size:14px;color:var(--muted);line-height:1.7;flex:1;}
+.ko-card-content a{color:var(--primary);transition:opacity 150ms ease;}
+.ko-card-content a:hover{opacity:.75;}
+.ko-soc-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.ko-soc-a{width:38px;height:38px;background:var(--card-2);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:border-color 180ms ease,background 180ms ease,transform 180ms ease;}
+.ko-soc-a:hover{border-color:var(--primary);background:var(--primary-dim);transform:translateY(-2px);}
+
+/* ── FOOTER V2 ───────────────────────────────────────── */
+.ftr{background:var(--hdr-bg);border-top:1px solid rgba(255,255,255,.06);}
+.ftr-top{max-width:var(--mw);margin:0 auto;padding:48px 28px 32px;display:grid;grid-template-columns:1fr auto;gap:48px;align-items:start;}
+.ftr-brand{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.ftr-logo{width:44px;height:44px;border-radius:var(--rl);object-fit:contain;background:rgba(255,255,255,.06);}
+.ftr-logo-ph{width:44px;height:44px;border-radius:var(--rl);background:var(--primary);display:flex;align-items:center;justify-content:center;font-family:var(--font-headline);font-size:17px;font-weight:700;color:#fff;}
+.ftr-name{font-family:var(--font-headline);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--hdr-text);}
+.ftr-tagline{font-size:13px;color:var(--hdr-text-dim);margin-bottom:20px;line-height:1.5;}
+.ftr-nav{display:flex;flex-wrap:wrap;gap:6px 20px;}
+.ftr-nav a{font-size:13px;color:var(--hdr-text-dim);font-weight:500;transition:color 150ms ease;}
+.ftr-nav a:hover{color:var(--primary);}
+.ftr-right{display:flex;flex-direction:column;align-items:flex-end;gap:16px;}
+.ftr-powered{font-size:12px;color:var(--hdr-text-dim);}
+.ftr-powered a{color:var(--primary);font-weight:600;}
+.ftr-bottom{border-top:1px solid rgba(255,255,255,.06);padding:16px 28px;max-width:var(--mw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.ftr-legal{display:flex;gap:16px;flex-wrap:wrap;}
+.ftr-legal a{font-size:11px;color:var(--faint);transition:color 150ms ease;}
+.ftr-legal a:hover{color:var(--muted);}
+.ftr-copy{font-size:11px;color:var(--faint);}
+/* Responsive unterer Bereich */
+@media(max-width:1024px){
+  .app-in{grid-template-columns:1fr;gap:48px;}
+  .app-right{flex-direction:row;justify-content:center;}
+  .app-mockup{max-width:240px;}
+  .ftr-top{grid-template-columns:1fr;}
+  .ftr-right{align-items:flex-start;}
+}
+@media(max-width:640px){
+  .app-sec{padding:56px 0;}
+  .app-cta-btns{flex-direction:column;}
+  .app-store-btn{width:100%;}
+  .ko-grid{grid-template-columns:1fr;}
+  .app-right{display:none;}
+  .ftr-bottom{flex-direction:column;align-items:flex-start;}
+}
+
+.empty{color:var(--text-faint);font-size:13px;padding:24px 0;font-style:italic;}
+
+/* SPIELBETRIEB */
+.sb-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.sb-tab{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:10px 20px;font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 150ms ease;}
+.sb-tab:hover{border-color:var(--primary);color:var(--text);}
+.sb-tab.on{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(244,122,31,.28);}
+.sb-panel{display:none;}
+.sb-panel.on{display:block;}
+.sb-hint{background:var(--card);border:1px solid var(--border);border-radius:var(--rx);padding:32px 28px;color:var(--muted);font-size:14px;line-height:1.6;}
+.sb-team-select{width:100%;max-width:420px;background:var(--card);border:2px solid var(--primary);border-radius:var(--rl);padding:14px 18px;color:var(--text);font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23F47A1F' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+.sb-team-select:focus{outline:none;border-color:var(--primary);}
+.sb-team-select option{background:var(--card);color:var(--text);}
+.sb-tabelle-wrap{display:flex;flex-direction:column;gap:16px;}
+.sb-tabelle-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);}
+
+/* ERGEBNISSE */
+.erg-grid{display:flex;flex-direction:column;gap:12px;}
+.erg-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;display:flex;align-items:center;gap:20px;transition:border-color 150ms ease;}
+.erg-card:hover{border-color:var(--border-2);}
+.erg-date{font-family:var(--font-body);font-size:12px;color:var(--faint);min-width:110px;flex-shrink:0;}
+.erg-date-day{font-weight:600;color:var(--muted);display:block;}
+.erg-date-time{display:block;}
+.erg-teams{flex:1;min-width:0;}
+.erg-team{font-family:var(--font-headline);font-size:15px;font-weight:500;text-transform:uppercase;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.erg-team.eigenes{color:var(--primary);font-weight:600;}
+.erg-score{font-family:var(--font-headline);font-size:26px;font-weight:600;text-align:center;min-width:90px;flex-shrink:0;color:var(--text);letter-spacing:.05em;}
+.erg-status{min-width:90px;flex-shrink:0;text-align:right;}
+.erg-badge{display:inline-block;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:var(--round);}
+.erg-badge.sieg{background:rgba(34,197,94,.15);color:#22c55e;}
+.erg-badge.niederlage{background:rgba(244,122,31,.15);color:var(--primary);}
+.erg-badge.unentschieden{background:rgba(245,158,11,.15);color:#f59e0b;}
+.erg-badge.unklar{background:var(--card-2);color:var(--faint);}
+.erg-loading{text-align:center;padding:28px;color:var(--faint);font-size:13px;}
+.erg-empty{text-align:center;padding:32px;color:var(--faint);font-size:13px;font-style:italic;}
+
+/* SPORTDATEN-BEREICH (Team-Modal) */
+.sd-wrap{border-top:1px solid var(--border);margin-top:8px;}
+.sd-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface2);}
+.sd-tab{flex:1;padding:13px 8px;text-align:center;font-family:var(--font-body);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);cursor:pointer;border-bottom:2px solid transparent;transition:color 150ms ease,border-color 150ms ease;}
+.sd-tab:hover{color:var(--text);}
+.sd-tab.on{color:var(--primary);border-bottom-color:var(--primary);}
+.sd-tab.disabled{opacity:.3;cursor:not-allowed;pointer-events:none;}
+.sd-panel{display:none;padding:18px 20px 22px;}
+.sd-panel.on{display:block;}
+.sd-loading{text-align:center;padding:28px;color:var(--faint);font-size:13px;}
+/* Tabellen-Darstellung */
+.sd-table{width:100%;border-collapse:collapse;font-size:13px;}
+.sd-table th{font-family:var(--font-body);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);}
+.sd-table th.r{text-align:right;}
+.sd-table td{padding:8px 8px;border-bottom:1px solid var(--border);color:var(--text);font-size:13px;}
+.sd-table td.r{text-align:right;color:var(--muted);}
+.sd-table tr:last-child td{border-bottom:none;}
+.sd-table tr.eigenes-team td{background:var(--primary);color:var(--text-on-dark) !important;font-weight:700;}
+.sd-table tr.eigenes-team td.r{color:var(--text-on-dark) !important;}
+.sd-table tr.eigenes-team td:first-child{border-left:4px solid var(--text-on-dark);}
+.sd-rang{font-family:var(--font-body);font-size:13px;font-weight:700;color:var(--muted);width:28px;}
+.sd-teamname{font-weight:600;font-size:13px;}
+.sd-updated{font-size:10px;color:var(--faint);text-align:right;margin-top:10px;letter-spacing:.03em;}
+.sd-empty{color:var(--faint);font-size:13px;padding:20px 0;text-align:center;font-style:italic;}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .hero-grid{grid-template-columns:1fr;}
+  .hero-side{display:none;}
+  .hero-wrap{border-radius:0;}
+  .news-grid{grid-template-columns:repeat(2,1fr);}
+  .nv-grid{grid-template-columns:repeat(2,1fr);}
+  .nv-img,.nv-ph{height:180px;}
+  .ko-grid{grid-template-columns:1fr 1fr;}
+  .app-in{grid-template-columns:1fr;}
+  .app-qr-wrap{display:none;}
+}
+@media(max-width:768px){
+  .wrap{padding:0 16px;}
+  .sec{padding:36px 0;}
+  .hdr-nav{display:none;}
+  .burger{display:flex;}
+  .hero-wrap{border-radius:0;}
+  .hero-body{padding:16px 16px 20px;}
+  .hero-teaser{font-size:14px;}
+  .hero-grid{border-radius:0;margin:0 -16px;}
+  .nv-grid{grid-template-columns:repeat(2,1fr);gap:16px;}
+  .news-grid{grid-template-columns:1fr;}
+  .nv-img,.nv-ph{height:160px;}
+  .ko-grid{grid-template-columns:1fr;}
+  .ev-grid{grid-template-columns:1fr;}
+
+  .sp-prem{flex-direction:column;align-items:flex-start;}
+  .ftr-in{flex-direction:column;align-items:flex-start;}
+}
+@media(max-width:640px){
+  .nv-section{padding:32px 0;}
+  .nv-grid{grid-template-columns:1fr;gap:16px;}
+  .nv-headline{font-size:18px;}
+  .nv-img,.nv-ph{height:200px;}
+}
+@media(max-width:480px){
+  .hero-title{font-size:18px;}
+  .hero-teaser{display:none;}
+  .app-btns{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="ld-logo" id="ld-logo">ON</div><div class="ld-bar"><div class="ld-fill"></div></div></div>
+
+<!-- 1. HEADER -->
+<header class="hdr">
+  <div class="hdr-in">
+    <a class="hdr-brand" href="#"><img id="hdr-logo" class="brand-logo" src="logos/Logo-BBK-Kreis.png" alt="Basketballkreis Düsseldorf/Neuss" onerror="this.outerHTML='<div id=hdr-logo class=brand-ph>BK</div>'"><div><div class="brand-name" id="hdr-name">Verein</div><div class="brand-sub" id="hdr-sub">Offizielle Website</div></div></a>
+    <nav class="hdr-nav" id="hdr-nav">
+      <a class="nav-a on" href="#start">Startseite</a>
+      <a class="nav-a" href="#aktuelles">Aktuelles</a>
+      <a class="nav-a" href="#spielbetrieb">Spielbetrieb</a>
+      <a class="nav-a" href="#mitgliedsvereine">Mitgliedsvereine</a>
+      <a class="nav-a" href="#veranstaltungen">Veranstaltungen</a>
+      <a class="nav-a" href="#downloads">Downloads</a>
+      <a class="nav-a" href="#ueber-bbk">Über den BBK</a>
+    </nav>
+    <a class="hdr-btn" id="hdr-app" href="#app">📱 App</a>
+    <div class="burger" onclick="toggleNav()"><span></span><span></span><span></span></div>
+  </div>
+</header>
+
+<!-- 2. HERO (BBK Startseite – Phase 2, hochwertiger) -->
+<section class="sec-sm" id="start"><div class="wrap">
+  <div class="bbk-hero-grid">
+    <div class="bbk-hero-left">
+      <div class="app-eyebrow">🏀 Basketballkreis Düsseldorf/Neuss</div>
+      <h1 style="font-family:var(--font-headline,inherit);font-weight:700;font-size:clamp(30px,4.5vw,46px);line-height:1.14;margin-bottom:16px;">Basketballkreis Düsseldorf / Neuss</h1>
+      <p style="font-size:17px;color:var(--muted);line-height:1.65;margin-bottom:28px;max-width:520px;">Die zentrale digitale Plattform für rund 20 Mitgliedsvereine. Spielbetrieb, Nachrichten, Veranstaltungen, Vereins-TV und digitale Vereinsplattformen – alles an einem Ort.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px;">
+        <a href="#aktuelles" class="hdr-btn" style="position:static;">📰 BBK-News</a>
+        <a href="#spielbetrieb" class="hdr-btn" style="position:static;">🏀 Spielbetrieb</a>
+        <a href="#mitgliedsvereine" class="hdr-btn" style="position:static;">🤝 Mitgliedsvereine</a>
+      </div>
+      <div class="bbk-hero-stats">
+        <div class="bbk-hero-stat"><div class="bbk-hero-stat-num">~20</div><div class="bbk-hero-stat-lbl">Mitgliedsvereine</div></div>
+        <div class="bbk-hero-stat"><div class="bbk-hero-stat-num">1</div><div class="bbk-hero-stat-lbl">Zentrale Plattform</div></div>
+        <div class="bbk-hero-stat"><div class="bbk-hero-stat-num">∞</div><div class="bbk-hero-stat-lbl">Website · App · Social Media</div></div>
+      </div>
+    </div>
+    <div class="bbk-hero-right">
+      <!-- Platzhalter-Grafik: spätere moderne Plattformgrafik ersetzt diese Struktur 1:1 -->
+      <div class="flow-diagram">
+        <div class="flow-step flow-step-main">Basketballkreis</div>
+        <div class="flow-connector">↓</div>
+        <div class="flow-step flow-step-main">Mitgliedsvereine</div>
+        <div class="flow-connector">↓</div>
+        <div class="flow-step flow-step-brand">ONLANG</div>
+        <div class="flow-connector">↓</div>
+        <div class="flow-branches">
+          <div class="flow-step flow-step-sm">Website</div>
+          <div class="flow-step flow-step-sm">App</div>
+          <div class="flow-step flow-step-sm">Push</div>
+          <div class="flow-step flow-step-sm">Social Media</div>
+          <div class="flow-step flow-step-sm">Vereins-TV</div>
+          <div class="flow-step flow-step-sm">Newsletter</div>
+        </div>
+        <div class="flow-connector">↓</div>
+        <div class="flow-step flow-step-ki">✨ KI-Unterstützung</div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 3. LIVE-SPORTBAND -->
+<div class="sportband" id="sportband">
+  <div class="sportband-label"><div class="sportband-dot"></div>Live</div>
+  <div class="sportband-wrap"><div class="sportband-track" id="sportband-track"><div class="sportband-item">Lade…</div></div></div>
+</div>
+
+<!-- 4. MITGLIEDSVEREINE -->
+<section class="sec" id="mitgliedsvereine"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-title">Mitgliedsvereine</div>
+    <div style="font-size:14px;color:var(--muted);margin-top:4px;max-width:640px;">Der Basketballkreis Düsseldorf/Neuss verbindet rund 20 Mitgliedsvereine — jeder mit eigener ONLANG-Vereinsplattform.</div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+    <input type="text" id="mv-suche" placeholder="🔍 Verein suchen…" oninput="bbkFilterKarten_('mv-grid', this.value)"
+      style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
+    <select id="mv-verein-dropdown" onchange="if(this.value) bbkSpringeZuKarte_('mv-grid', this.value)"
+      style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
+      <option value="">— Oder Verein aus Liste wählen —</option>
+    </select>
+  </div>
+  <div class="teams-row" id="mv-grid">
+    <div class="sb-hint">Lade Vereine…</div>
+  </div>
+</div></section>
+
+<script>
+// ── Generische Such-/Filterfunktion für Vereinskarten-Reihen ──
+// Wird sowohl von Spielbetrieb (bbk-verein-grid) als auch von
+// Mitgliedsvereine (mv-grid) verwendet. Blendet Karten ein/aus,
+// ohne das Grid neu zu laden — rein clientseitiger Textabgleich.
+function bbkFilterKarten_(gridId, query){
+  const grid = document.getElementById(gridId);
+  if(!grid) return;
+  const q = String(query||'').trim().toLowerCase();
+  grid.querySelectorAll('.mv-card').forEach(card => {
+    const name = (card.querySelector('.mv-card-name')?.textContent || '').toLowerCase();
+    card.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+}
+
+// ============================================================
+// Mitgliedsvereine — Schritt 4 (07.07.2026)
+// Lädt dieselbe Vereinsliste wie Spielbetrieb aus dem Sheet
+// BBK_Spielbetrieb (über getBbkVereine). Bewusst UNABHÄNGIG vom
+// Spielbetrieb-Code (kein gemeinsamer Zustand, keine gemeinsamen
+// Funktionen) — dort wird nichts verändert.
+//
+// Später: sobald das Sheet zusätzliche Spalten für Website/App/
+// Social-Links führt, können diese hier einfach ergänzt werden
+// (v.website, v.app, v.social o.ä.) — ohne dass diese Funktion
+// nochmal umgebaut werden muss.
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  const grid = document.getElementById('mv-grid');
+  if(!grid) return;
+
+  // Bekannte Vereinslogos (Stand 07.07.2026). Nur eindeutig zuordenbare
+  // Logos sind hier eingetragen — bei Unsicherheit bleibt bewusst das
+  // Basketball-Icon als Fallback, statt falsch zuzuordnen.
+  const BBK_VEREIN_LOGOS = {
+    'Osterather TV 1893 e. V.': 'logos/Logo-OTV_300326.png',
+    'STV Rethel e.V.': 'logos/Logo-Rethel_300326.png',
+    'Turngemeinde v.1881 Düsseldorf': 'logos/Logo-TG81_300326.png',
+    'DJK TUSA 06 Düsseldorf': 'logos/Logo-TUSA_300326.png',
+    'ART 77/90 Düsseldorf': 'logos/Logo-ART_Düsseldorf_300326.png',
+    'SG ART Giants Düsseldorf': 'logos/Logo-ART_Giants_300326.png',
+    'Capitol Bascats Düsseldorf e.V.': 'logos/Logo-Capitol_300326.png',
+    'TSV Bayer Dormagen e. V.': 'logos/Logo-Dormagen_300326.png',
+    'FSV Jüchen 1984 e.V.': 'logos/Logo-FSV_Jüchen_300326.png',
+    'Greek Baskets Düsseldorf': 'logos/Logo-Greek_300326.png',
+    'ISD Sportverein e. V.': 'logos/Logo-ISD_300326.png',
+    'BG Kaarst-Büttgen': 'logos/Logo-Kaarst-Büttgen_300326.png',
+    'TuS Maccabi Düsseldorf e. V.': 'logos/Logo-Maccabi_300326.png',
+    'BSG Blau-Weiß Grevenbroich': 'logos/Logo-Elephants_300326.png',
+    'SG Rot-Weiß Gierath 48/62 e.V.': 'logos/Logo-Scorpions-Gierath.svg'
+    // "Logo-Stürzelberg" bewusst NICHT zugeordnet — Verein existiert
+    // aktuell nicht / hat keine Mannschaften im Spielbetrieb (07.07.2026)
+  };
+
+  try {
+    const resp = await fetch(GAS + '?action=getBbkVereine');
+    const data = await resp.json();
+
+    if(!data || !data.success || !data.vereine || !data.vereine.length){
+      grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+      return;
+    }
+
+    grid.innerHTML = data.vereine.map(v => {
+      // Zukünftige Zusatzdaten (Website/App/Social) — solange das Sheet
+      // sie noch nicht liefert, bleibt es beim reinen Namen + Icon.
+      const link = v.website || v.web || '';
+      const istLink = link && link.trim();
+      const logoPfad = BBK_VEREIN_LOGOS[v.name];
+      const logoHtml = logoPfad
+        ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">`
+        : '🏀';
+      return `<a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"${istLink ? ' target="_blank" rel="noopener"' : ''}>
+          <div class="mv-card-logo">${logoHtml}</div>
+          <div class="mv-card-name">${esc(v.name)}</div>
+        </a>`;
+    }).join('');
+
+    const mvDd = document.getElementById('mv-verein-dropdown');
+    if(mvDd){
+      mvDd.innerHTML = '<option value="">— Oder Verein aus Liste wählen —</option>' +
+        data.vereine.map(v => `<option value="${esc(v.name)}">${esc(v.name)}</option>`).join('');
+    }
+  } catch(err){
+    grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+    console.warn('Mitgliedsvereine Fehler:', err);
+  }
+});
+
+// ── Springt zur passenden Karte und hebt sie kurz hervor ──
+// (aktuell für Mitgliedsvereine-Dropdown genutzt; generisch für jedes
+// Grid mit data-name-Attribut auf den Karten)
+function bbkSpringeZuKarte_(gridId, name){
+  const grid = document.getElementById(gridId);
+  if(!grid) return;
+  const card = grid.querySelector(`[data-name="${CSS.escape(name)}"]`);
+  if(!card) return;
+  card.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+  card.style.transition = 'box-shadow .3s';
+  card.style.boxShadow = '0 0 0 3px var(--primary)';
+  setTimeout(() => { card.style.boxShadow = ''; }, 1500);
+}
+</script>
+
+<!-- 5. HERO / AKTUELLE NACHRICHTEN (bestehende News-Logik, unverändert funktional) -->
+<section class="sec-sm" id="aktuelles"><div class="wrap">
+  <div class="hero-grid" id="hero-grid">
+    <div id="hero-main"></div>
+    <div class="hero-side" id="hero-side"></div>
+  </div>
+</div></section>
+
+<!-- 5b. AKTUELLE NEWS (Grid) -->
+<section class="nv-section" id="aktuelle-news"><div class="wrap">
+  <div class="nv-head">
+    <div class="nv-title-wrap">
+      <div class="nv-title">BBK-News</div>
+      <div class="nv-subtitle">Offizielle Nachrichten des Basketballkreises Düsseldorf/Neuss — direkt aus dem ONLANG Studio</div>
+    </div>
+    <a class="nv-more" href="#">Alle News →</a>
+  </div>
+  <div class="nv-grid" id="nv-grid"><div class="empty">Noch keine News vorhanden.</div></div>
+</div></section>
+
+<!-- 5c. VEREINSNACHRICHTEN – vorbereitet, noch nicht aktiv (siehe Hinweis) -->
+<section class="sec sec-alt" id="vereinsnachrichten"><div class="wrap">
+  <div class="nv-head">
+    <div class="nv-title-wrap">
+      <div class="nv-title">Vereinsnachrichten</div>
+      <div class="nv-subtitle">Neuigkeiten der Mitgliedsvereine — nach Verein filterbar</div>
+    </div>
+  </div>
+  <div class="empty" style="padding:32px 0;text-align:center;color:var(--muted);font-size:14px;">
+    Vereinsmeldungen werden künftig zentral gesammelt und hier angezeigt.
+  </div>
+</div></section>
+<nav class="mob-nav" id="mob-nav">
+  <a class="nav-a" href="#start" onclick="toggleNav()">Startseite</a>
+  <a class="nav-a" href="#aktuelles" onclick="toggleNav()">Aktuelles</a>
+  <a class="nav-a" href="#spielbetrieb" onclick="toggleNav()">Spielbetrieb</a>
+  <a class="nav-a" href="#mitgliedsvereine" onclick="toggleNav()">Mitgliedsvereine</a>
+  <a class="nav-a" href="#veranstaltungen" onclick="toggleNav()">Veranstaltungen</a>
+  <a class="nav-a" href="#downloads" onclick="toggleNav()">Downloads</a>
+  <a class="nav-a" href="#ueber-bbk" onclick="toggleNav()">Über den BBK</a>
+</nav>
+
+
+<!-- SPIELBETRIEB (BBK-Version) — bewusst getrennt von der Vereins-Team-Logik.
+     Verein-Website: Mannschaft wählen (sbTab/sbWaehleTeam bleiben unverändert).
+     BBK-Kreisplattform: zwei gleichwertige Wege zu Tabelle/Ergebnisse/Spieltermine:
+       a) Nach Liga    – alle Kreisligen direkt, ohne Vereinsbezug (BBK organisiert Ligen)
+       b) Nach Verein  – Verein → Kreisliga-Mannschaften dieses Vereins (bereits freigegeben, unverändert)
+     Rein statisch, keine neue API, keine echten Daten. -->
+<section class="sec" id="spielbetrieb" style="border-top:1px solid var(--border);"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-title">Spielbetrieb</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px;">Alle Kreisligen — nach Liga oder nach Verein erreichbar</div>
+  </div>
+  <div class="app-eyebrow" style="margin-bottom:22px;">📅 Die neue Saison befindet sich in Vorbereitung. Angezeigt werden künftig Tabellen, Ergebnisse und Spieltermine.</div>
+
+  <!-- Moduswahl: Nach Liga / Nach Verein -->
+  <div class="sb-tabs" style="margin-bottom:24px;">
+    <button class="sb-tab on" id="bbk-modus-btn-liga" onclick="bbkModusWaehlen('liga', this)">🏆 Nach Liga</button>
+    <button class="sb-tab" id="bbk-modus-btn-verein" onclick="bbkModusWaehlen('verein', this)">🏀 Nach Verein</button>
+  </div>
+
+  <!-- MODUS A: NACH LIGA — alle Kreisligen direkt, ohne Vereinsbezug -->
+  <div id="bbk-modus-liga">
+    <div class="sb-tabelle-label" style="margin-bottom:10px;">Liga auswählen</div>
+    <div class="teams-row" id="bbk-liga-grid" style="margin-bottom:8px;"></div>
+  </div>
+
+  <!-- MODUS B: NACH VEREIN — bereits freigegebene Struktur, unverändert -->
+  <div id="bbk-modus-verein" style="display:none;">
+    <!-- Schritt 1: Verein auswählen -->
+    <div class="sb-tabelle-label" style="margin-bottom:10px;">Verein auswählen</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+      <input type="text" id="bbk-verein-suche" placeholder="🔍 Verein suchen…" oninput="bbkFilterKarten_('bbk-verein-grid', this.value)"
+        style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
+      <select id="bbk-verein-dropdown" onchange="if(this.value) bbkVereinWaehlen(this.value)"
+        style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
+        <option value="">— Oder Verein aus Liste wählen —</option>
+      </select>
+    </div>
+    <div class="teams-row" id="bbk-verein-grid" style="margin-bottom:28px;"></div>
+
+    <!-- Schritt 2: Mannschaftskarten des gewählten Vereins -->
+    <div id="bbk-mannschaft-block" style="display:none;margin-bottom:28px;">
+      <div class="sb-tabelle-label" id="bbk-mannschaft-label" style="margin-bottom:10px;">Kreisliga-Mannschaften</div>
+      <div class="teams-row" id="bbk-mannschaft-grid"></div>
+    </div>
+  </div>
+
+  <!-- GEMEINSAMER ZIELBEREICH: Tabs für Liga ODER Verein/Mannschaft -->
+  <div id="bbk-sportdaten-block" style="display:none;margin-top:12px;">
+    <div class="sb-tabelle-label" style="margin-bottom:10px;">Ausgewählt: <strong id="bbk-aktive-mannschaft">–</strong></div>
+    <div class="sb-tabs">
+      <button class="sb-tab on" onclick="bbkSbTab(this,'bbk-sb-tabelle')">📊 Tabelle</button>
+      <button class="sb-tab" onclick="bbkSbTab(this,'bbk-sb-ergebnisse')">🏀 Ergebnisse</button>
+      <button class="sb-tab" onclick="bbkSbTab(this,'bbk-sb-spielplan')">📅 Spieltermine</button>
+    </div>
+    <div class="sb-panel on" id="bbk-sb-tabelle">
+      <div class="sb-tabelle-wrap"><div class="sb-hint">Die neue Saison befindet sich in Vorbereitung. Angezeigt werden künftig Tabellen, Ergebnisse und Spieltermine.</div></div>
+    </div>
+    <div class="sb-panel" id="bbk-sb-ergebnisse">
+      <div class="sb-tabelle-wrap"><div class="sb-hint">Die neue Saison befindet sich in Vorbereitung. Angezeigt werden künftig Tabellen, Ergebnisse und Spieltermine.</div></div>
+    </div>
+    <div class="sb-panel" id="bbk-sb-spielplan">
+      <div class="sb-tabelle-wrap"><div class="sb-hint">Die neue Saison befindet sich in Vorbereitung. Angezeigt werden künftig Tabellen, Ergebnisse und Spieltermine.</div></div>
+    </div>
+  </div>
+</div></section>
+
+<script>
+// BBK-Spielbetrieb (Verein → Mannschaft → Sportdaten) — bewusst eigenständig,
+// ruft KEINE bestehende Vereins-Team-Funktion auf (sbTab/sbWaehleTeam/
+// sbInitErgebnisse/sbFilterErgebnisse/sbFilterSpielplan bleiben für
+// Vereinsseiten unverändert).
+//
+// PHASE 4 (07.07.2026): Vereine + Mannschaften kommen jetzt ausschließlich
+// aus dem Sheet BBK_Spielbetrieb (über getBbkVereine), nicht mehr aus einem
+// festen JS-Array. Neue Vereine/Mannschaften benötigen ab jetzt KEINE
+// Code-Änderung mehr — nur eine neue Zeile im Sheet.
+let _bbkVereineDaten = [];
+
+async function bbkRenderVereinGrid(){
+  const grid = document.getElementById('bbk-verein-grid');
+  grid.innerHTML = '<div class="sb-hint">Lade Vereine…</div>';
+  try {
+    const resp = await fetch(GAS + '?action=getBbkVereine');
+    const data = await resp.json();
+    if(!data || !data.success || !data.vereine || !data.vereine.length){
+      grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+      return;
+    }
+    _bbkVereineDaten = data.vereine;
+    grid.innerHTML = _bbkVereineDaten.map(v => `
+      <button type="button" class="mv-card" data-name="${esc(v.name)}" style="cursor:pointer;" onclick="bbkVereinWaehlen('${v.key}')">
+        <div class="mv-card-logo">🏀</div>
+        <div class="mv-card-name">${esc(v.name)}</div>
+      </button>`).join('');
+
+    const dd = document.getElementById('bbk-verein-dropdown');
+    if(dd){
+      dd.innerHTML = '<option value="">— Oder Verein aus Liste wählen —</option>' +
+        _bbkVereineDaten.map(v => `<option value="${esc(v.key)}">${esc(v.name)}</option>`).join('');
+    }
+  } catch(err){
+    grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+    console.warn('bbkRenderVereinGrid Fehler:', err);
+  }
+}
+
+function bbkVereinWaehlen(key){
+  const verein = _bbkVereineDaten.find(v => v.key === key);
+  if(!verein) return;
+
+  document.getElementById('bbk-mannschaft-block').style.display = 'block';
+  document.getElementById('bbk-mannschaft-label').textContent = 'Kreisliga-Mannschaften — ' + verein.name;
+
+  const grid = document.getElementById('bbk-mannschaft-grid');
+  grid.innerHTML = verein.mannschaften.map(m => `
+    <button type="button" class="mv-card" style="cursor:pointer;" onclick="bbkMannschaftWaehlen('${verein.name.replace(/'/g,"\\'")}','${m.replace(/'/g,"\\'")}')">
+      <div class="mv-card-logo">🎽</div>
+      <div class="mv-card-name">${esc(m)}</div>
+    </button>`).join('');
+
+  // Sportdaten-Bereich zurücksetzen, bis eine Mannschaft gewählt wird
+  document.getElementById('bbk-sportdaten-block').style.display = 'none';
+}
+
+function bbkMannschaftWaehlen(vereinName, mannschaftName){
+  document.getElementById('bbk-sportdaten-block').style.display = 'block';
+  document.getElementById('bbk-aktive-mannschaft').textContent = vereinName + ' — ' + mannschaftName;
+  document.getElementById('bbk-sportdaten-block').scrollIntoView({behavior:'smooth', block:'nearest'});
+  // Phase 4: Live-Daten ausschließlich über die Sheet-getriebenen Endpunkte
+  // getBbkTabelle/getBbkErgebnisse/getBbkSpielplan (siehe weiter unten)
+  bbkLadeSportdaten(vereinName, mannschaftName);
+}
+
+// --- MODUS A: NACH LIGA — alle Kreisligen direkt, ohne Vereinsbezug ---
+const BBK_LIGEN = ['U10','U12','U14','U16','U18','Senioren','Finalrunden'];
+
+function bbkRenderLigaGrid(){
+  const grid = document.getElementById('bbk-liga-grid');
+  grid.innerHTML = BBK_LIGEN.map(l => `
+    <button type="button" class="mv-card" style="cursor:pointer;" onclick="bbkLigaWaehlen('${l}')">
+      <div class="mv-card-logo">🏆</div>
+      <div class="mv-card-name">Kreisliga ${l}</div>
+    </button>`).join('');
+}
+
+function bbkLigaWaehlen(liga){
+  document.getElementById('bbk-sportdaten-block').style.display = 'block';
+  document.getElementById('bbk-aktive-mannschaft').textContent = 'Kreisliga ' + liga + ' (kreisweit)';
+  document.getElementById('bbk-sportdaten-block').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// --- Moduswahl: Nach Liga / Nach Verein ---
+function bbkModusWaehlen(modus, btn){
+  document.querySelectorAll('#bbk-modus-btn-liga, #bbk-modus-btn-verein').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('bbk-modus-liga').style.display   = (modus === 'liga')   ? 'block' : 'none';
+  document.getElementById('bbk-modus-verein').style.display = (modus === 'verein') ? 'block' : 'none';
+  // Zielbereich zurücksetzen beim Moduswechsel, damit nichts aus dem anderen Modus stehen bleibt
+  document.getElementById('bbk-sportdaten-block').style.display = 'none';
+}
+
+function bbkSbTab(btn, panelId){
+  const tabs = btn.closest('.sb-tabs');
+  tabs.querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  const block = btn.closest('#bbk-sportdaten-block');
+  block.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById(panelId).classList.add('on');
+}
+
+// ============================================================
+// Phase 4 — Vollständig sheet-getriebene Sportdaten-Panels
+// Stand: 07.07.2026
+//
+// Ersetzt die bisherige Phase-3-Übergangslogik (BBK_GIERATH_TEAM_MAP +
+// Wiederverwendung von getTabellen/getErgebnisse). Ab jetzt läuft JEDER
+// Verein/JEDE Mannschaft über die gleichen, neuen Endpunkte:
+//   action=getBbkTabelle / getBbkErgebnisse / getBbkSpielplan
+// Diese lesen ausschließlich aus dem Sheet BBK_Spielbetrieb (Verein_Name +
+// Mannschaft_Name → TeamSL_URL). Kein JS-Mapping mehr nötig — ein neuer
+// Verein/eine neue Mannschaft wird ausschließlich über das Sheet ergänzt.
+//
+// Jede Mannschaft im Sheet ist bereits eine eigene, konkrete Zeile
+// (z.B. "U16 Kreisliga (m)" und "U16 Kreisliga (w)" getrennt) — deshalb
+// entfällt die bisherige Mehrfach-Team-Schleife, es wird immer genau
+// 1 Datensatz pro Panel geladen.
+// ============================================================
+
+async function bbkLadeSportdaten(vereinName, mannschaftName){
+  bbkLadePanelSb_('bbk-sb-tabelle',    'getBbkTabelle',    'tabelle',    vereinName, mannschaftName, bbkRenderSbTabelle_);
+  bbkLadePanelSb_('bbk-sb-ergebnisse', 'getBbkErgebnisse', 'ergebnisse', vereinName, mannschaftName, bbkRenderSbErgebnisse_);
+  bbkLadePanelSb_('bbk-sb-spielplan',  'getBbkSpielplan',  'spielplan',  vereinName, mannschaftName, bbkRenderSbSpielplan_);
+}
+
+// ── Gemeinsame Lade-Logik für alle 3 Panels ───────────────
+async function bbkLadePanelSb_(panelId, action, feldName, vereinName, mannschaftName, renderFn){
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+  const wrap = panel.querySelector('.sb-tabelle-wrap') || panel;
+  wrap.innerHTML = '<div class="sb-hint">Lade Daten…</div>';
+
+  try {
+    const url = GAS + '?action=' + action
+      + '&vereinName=' + encodeURIComponent(vereinName)
+      + '&mannschaft=' + encodeURIComponent(mannschaftName);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const liste = data && data[feldName];
+
+    if(!data || !data.success || !liste || !liste.length || data.status === 'KEINE_DATEN'){
+      wrap.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+      return;
+    }
+    renderFn(wrap, liste, vereinName);
+  } catch(err){
+    wrap.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+    console.warn('bbkLadePanelSb_ Fehler ('+action+'):', err);
+  }
+}
+
+// ── Prüft, ob eine Zeile das "eigene" Team des gewählten Vereins ist ──
+// (Wortabgleich Vereinsname ↔ Teamname, wie beim Vereins-eigenen
+// Spielbetrieb — basketball-bund.net führt Gierath z.B. als "SG RW
+// Gierath", daher genügt ein Wortabgleich ohne zusätzliche Alias-Liste)
+function bbkIstEigenesTeamSb_(teamName, vereinName){
+  const tn = fixU(teamName || '').toLowerCase();
+  const woerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
+  return woerter.some(w => tn.includes(w.toLowerCase()));
+}
+
+// ── Tabelle rendern ────────────────────────────────────────
+function bbkRenderSbTabelle_(wrap, rows, vereinName){
+  const zeilen = rows.map((r,i) => {
+    const teamName = fixU(r.Team_Name);
+    const eigen = bbkIstEigenesTeamSb_(teamName, vereinName);
+    return `<tr${eigen?' class="eigenes-team"':''}><td class="sd-rang">${esc(r.Rang||i+1)}</td><td class="sd-teamname">${esc(teamName)}${eigen?' ◄':''}</td><td class="r">${esc(r.Spiele||'')}</td><td class="r">${esc(r.Siege||'')}</td><td class="r">${esc(r.Niederlagen||'')}</td><td class="r">${esc(r.Punkte||'')}</td></tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<table class="sd-table">
+      <thead><tr><th class="sd-rang">#</th><th>Team</th><th class="r">Sp.</th><th class="r">S</th><th class="r">N</th><th class="r">Pkt.</th></tr></thead>
+      <tbody>${zeilen}</tbody>
+    </table>`;
+}
+
+// ── Ergebnisse rendern ─────────────────────────────────────
+function bbkRenderSbErgebnisse_(wrap, rows, vereinName){
+  // Nur Spiele zeigen, in denen der gewählte Verein tatsächlich Heim oder
+  // Gast ist — Action=103 liefert sonst die komplette Liga-Ergebnisliste.
+  const eigene = rows.filter(r => {
+    const heim = fixU(r.Heim);
+    const gast = fixU(r.Gast);
+    return bbkIstEigenesTeamSb_(heim, vereinName) || bbkIstEigenesTeamSb_(gast, vereinName);
+  });
+
+  if(!eigene.length){
+    wrap.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+    return;
+  }
+
+  const cards = eigene.map(r => {
+    const heim = fixU(r.Heim);
+    const gast = fixU(r.Gast);
+    const heimIstWir = bbkIstEigenesTeamSb_(heim, vereinName);
+    const gastIstWir = bbkIstEigenesTeamSb_(gast, vereinName);
+    return `<div class="erg-card">
+      <div class="erg-date"><span class="erg-date-day">${esc(r.Datum)}</span></div>
+      <div class="erg-teams">
+        <div class="erg-team${heimIstWir?' eigenes':''}">${esc(heim)}</div>
+        <div class="erg-team${gastIstWir?' eigenes':''}">${esc(gast)}</div>
+      </div>
+      <div class="erg-score">${esc(r.Ergebnis || '–:–')}</div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="erg-grid">${cards}</div>`;
+}
+
+// ── Spielplan rendern ──────────────────────────────────────
+function bbkRenderSbSpielplan_(wrap, rows, vereinName){
+  // Gleicher Filter wie bei Ergebnisse — Action=101 liefert sonst den
+  // kompletten Liga-Spielplan aller Teams.
+  const eigene = rows.filter(r => {
+    const heim = fixU(r.Heim);
+    const gast = fixU(r.Gast);
+    return bbkIstEigenesTeamSb_(heim, vereinName) || bbkIstEigenesTeamSb_(gast, vereinName);
+  });
+
+  if(!eigene.length){
+    wrap.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+    return;
+  }
+
+  const cards = eigene.map(r => {
+    const heim = fixU(r.Heim);
+    const gast = fixU(r.Gast);
+    const heimIstWir = bbkIstEigenesTeamSb_(heim, vereinName);
+    const gastIstWir = bbkIstEigenesTeamSb_(gast, vereinName);
+    return `<div class="erg-card">
+      <div class="erg-date"><span class="erg-date-day">${esc(r.Datum)}</span></div>
+      <div class="erg-teams">
+        <div class="erg-team${heimIstWir?' eigenes':''}">${esc(heim)}</div>
+        <div class="erg-team${gastIstWir?' eigenes':''}">${esc(gast)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="erg-grid">${cards}</div>`;
+}
+
+// Erst starten, wenn die gesamte Seite geparst ist — GAS wird erst weiter
+// unten in der Datei definiert, daher NICHT sofort synchron aufrufen.
+window.addEventListener('DOMContentLoaded', () => {
+  bbkRenderVereinGrid();
+  bbkRenderLigaGrid();
+});
+</script>
+
+<!-- 6. TEAMS -->
+<section class="sec-sm" id="teams"><div class="wrap">
+  <div class="sec-head"><div class="sec-title">Unsere Teams</div></div>
+  <div class="teams-row" id="teams-row"></div>
+</div></section>
+
+<!-- 7. TV -->
+<section class="sec tv-sec" id="tv"><div class="wrap">
+  <div class="tv-hdr">
+    <div class="tv-brand">
+      <div class="tv-icon">▶</div>
+      <div class="tv-name" id="tv-name">Vereins<span>-TV</span></div>
+    </div>
+  </div>
+  <div class="tv-layout" id="tv-layout">
+    <div class="tv-main">
+      <div class="tv-player" id="tv-player">
+        <div class="tv-player-nopic">▶</div>
+      </div>
+      <div class="tv-main-info" id="tv-main-info"></div>
+      <div class="tv-thumbs" id="tv-thumbs"></div>
+    </div>
+    <div class="tv-playlist">
+      <div class="tv-playlist-head">► Alle Videos</div>
+      <div class="tv-playlist-list" id="tv-playlist-list"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 8. VERANSTALTUNGEN -->
+<section class="sec" id="veranstaltungen"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-title">Veranstaltungen</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px;">Trainerfortbildungen, Schiedsrichter, Kreistag, Turniere und Vereinsveranstaltungen</div>
+  </div>
+  <div class="ev-grid" id="ev-grid"><div class="empty">Keine bevorstehenden Veranstaltungen.</div></div>
+</div></section>
+
+<!-- 8b. DOWNLOADS -->
+<section class="sec" id="downloads" style="border-top:1px solid var(--border);"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-title">Downloads</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px;">Ausschreibungen, Formulare, Spielordnung und Protokolle</div>
+  </div>
+  <div class="teams-row" id="dl-grid">
+    <div class="mv-card"><div class="mv-card-logo">📄</div><div class="mv-card-name">Ausschreibungen</div></div>
+    <div class="mv-card"><div class="mv-card-logo">📝</div><div class="mv-card-name">Formulare</div></div>
+    <div class="mv-card"><div class="mv-card-logo">📖</div><div class="mv-card-name">Spielordnung</div></div>
+    <div class="mv-card"><div class="mv-card-logo">🗂️</div><div class="mv-card-name">Protokolle</div></div>
+    <div class="mv-card"><div class="mv-card-logo">🏛️</div><div class="mv-card-name">WBV-Dokumente</div></div>
+  </div>
+</div></section>
+
+<!-- 9. PARTNER & SPONSOREN -->
+<section class="sec" id="sponsoren" style="border-top:1px solid var(--border);"><div class="wrap">
+  <div class="sec-head">
+    <div>
+      <div class="sec-title">Partner &amp; Sponsoren</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;">Unsere Unterstützer und starken Partner</div>
+    </div>
+  </div>
+  <div id="sp-premium-wrap"></div>
+  <div class="sp-grid" id="sp-grid"></div>
+</div></section>
+
+<!-- 10. APP -->
+<section class="app-sec" id="app">
+  <div class="app-in">
+    <div class="app-left">
+      <div class="app-eyebrow">Jetzt kostenlos</div>
+      <div class="app-headline" id="app-title">Kostenlose<br><span>Vereins-App</span></div>
+      <div class="app-desc" id="app-sub">Alle Mitgliedsvereine erhalten kostenlos ihre eigene ONLANG Vereins-App.</div>
+      <div class="app-features">
+        <div class="app-feature"><div class="app-feature-icon">📰</div><div class="app-feature-text">Aktuelle News &amp; Spielberichte</div></div>
+        <div class="app-feature"><div class="app-feature-icon">🏀</div><div class="app-feature-text">Ergebnisse &amp; Tabellen in Echtzeit</div></div>
+        <div class="app-feature"><div class="app-feature-icon">📅</div><div class="app-feature-text">Spielplan aller Mannschaften</div></div>
+        <div class="app-feature"><div class="app-feature-icon">🔔</div><div class="app-feature-text">Push-Benachrichtigungen</div></div>
+        <div class="app-feature"><div class="app-feature-icon">🎥</div><div class="app-feature-text">Vereins-TV &amp; Videos</div></div>
+      </div>
+      <div class="app-cta-wrap">
+        <div class="app-cta-btns">
+          <a class="app-store-btn" id="app-ios" href="#" style="display:none;">
+            <div class="app-store-ico">🍎</div>
+            <div><div class="app-store-lbl">Laden im</div><div class="app-store-name">App Store</div></div>
+          </a>
+          <a class="app-store-btn" id="app-gp" href="#" style="display:none;">
+            <div class="app-store-ico">🤖</div>
+            <div><div class="app-store-lbl">Jetzt bei</div><div class="app-store-name">Google Play</div></div>
+          </a>
+        </div>
+        <a class="app-direct-btn" id="app-direct" href="#">📱 Direkt zur App →</a>
+      </div>
+    </div>
+    <div class="app-right">
+      <div class="app-mockup">
+        <div class="app-mockup-inner">
+          <div class="app-mockup-logo" id="app-mockup-logo">ON</div>
+          <div class="app-mockup-name" id="app-mockup-name">Vereins-App</div>
+          <div class="app-mockup-sub">Dein Verein. Immer dabei.</div>
+          <div class="app-mockup-bars">
+            <div class="app-mockup-bar"></div>
+            <div class="app-mockup-bar"></div>
+            <div class="app-mockup-bar"></div>
+          </div>
+        </div>
+      </div>
+      <div class="app-qr-block">
+        <div class="app-qr-box" id="app-qr-box">
+          <img id="app-qr-img" src="data:image/png;base64,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" alt="QR-Code" style="width:184px;height:184px;object-fit:contain;">
+        </div>
+        <div class="app-qr-label">QR-Code scannen</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11. ÜBER DEN BBK (vormals Kontakt, umgewidmet) -->
+<section class="sec" id="ueber-bbk"><div class="wrap">
+  <div class="sec-head">
+    <div>
+      <div class="sec-title">Über den BBK</div>
+      <div id="bbk-beschreibung" style="font-size:13px;color:var(--muted);margin-top:4px;max-width:640px;">Der Basketballkreis Düsseldorf/Neuss ist die zentrale Organisation für rund 20 Mitgliedsvereine. Der Basketballkreis informiert. Die Vereine kommunizieren. ONLANG verbindet beides.</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:36px;">
+    <div style="font-family:var(--font-headline);font-size:16px;font-weight:600;text-transform:uppercase;margin-bottom:6px;">Vorstand</div>
+    <div id="vorstand-hinweis" style="font-size:12px;color:var(--faint);margin-bottom:16px;">Vorläufige Angaben — Pflege über Google Sheet/Studio ist vorbereitet, aber noch nicht angebunden.</div>
+    <div class="teams-row" id="vorstand-grid">
+      <div class="mv-card" style="width:210px;">
+        <div class="mv-card-logo">👤</div>
+        <div class="mv-card-name">Name folgt</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">1. Vorsitzende/r</div>
+        <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.5;">
+          <a href="mailto:vorsitz@bbk-duesseldorf-neuss.de" style="color:var(--faint);">vorsitz@bbk-duesseldorf-neuss.de</a><br>
+          <a href="tel:" style="color:var(--faint);">Telefon folgt</a>
+        </div>
+      </div>
+      <div class="mv-card" style="width:210px;">
+        <div class="mv-card-logo">👤</div>
+        <div class="mv-card-name">Name folgt</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">2. Vorsitzende/r</div>
+        <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.5;">
+          <a href="mailto:" style="color:var(--faint);">E-Mail folgt</a><br>
+          <a href="tel:" style="color:var(--faint);">Telefon folgt</a>
+        </div>
+      </div>
+      <div class="mv-card" style="width:210px;">
+        <div class="mv-card-logo">👤</div>
+        <div class="mv-card-name">Name folgt</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">Schiedsrichterwart</div>
+        <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.5;">
+          <a href="mailto:" style="color:var(--faint);">E-Mail folgt</a><br>
+          <a href="tel:" style="color:var(--faint);">Telefon folgt</a>
+        </div>
+      </div>
+      <div class="mv-card" style="width:210px;">
+        <div class="mv-card-logo">👤</div>
+        <div class="mv-card-name">Name folgt</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">Jugendwart</div>
+        <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.5;">
+          <a href="mailto:" style="color:var(--faint);">E-Mail folgt</a><br>
+          <a href="tel:" style="color:var(--faint);">Telefon folgt</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ko-grid" id="ko-grid"></div>
+</div></section>
+
+<script>
+// ============================================================
+// Phase 5 (Beta) — Allgemein / Vorstand / Kontakte
+// Stand: 07.07.2026
+//
+// Komplett EIGENSTÄNDIG (Präfix bbk5), lädt bei DOMContentLoaded aus
+// den neuen Endpunkten getBbkAllgemein / getBbkVorstand / getBbkKontakte.
+// Überschreibt NUR die BBK-spezifischen Platzhalter-Bereiche (Vorstand-
+// Grid, Kontakt-Grid, Beschreibung, Header-Name) — rührt sonst nichts an.
+// Fehlt ein Wert oder schlägt der Abruf fehl: die bisherigen statischen
+// Platzhalter bleiben einfach stehen (kein Absturz, kein Fehlerzustand).
+// ============================================================
+
+window.addEventListener('DOMContentLoaded', async () => {
+  // ── Allgemein ──
+  try {
+    const resp = await fetch(GAS + '?action=getBbkAllgemein');
+    const data = await resp.json();
+    if(data && data.success && data.data && Object.keys(data.data).length){
+      const a = data.data;
+      if(a.Kreisname){
+        const hn = document.getElementById('hdr-name');
+        if(hn) hn.textContent = a.Kreisname;
+        document.title = a.Kreisname + ' – SportMagazin';
+      }
+      if(a.Beschreibung){
+        const bd = document.getElementById('bbk-beschreibung');
+        if(bd) bd.textContent = a.Beschreibung;
+      }
+    }
+  } catch(err){ console.warn('bbk5 Allgemein Fehler:', err); }
+
+  // ── Vorstand ──
+  try {
+    const resp = await fetch(GAS + '?action=getBbkVorstand');
+    const data = await resp.json();
+    const grid = document.getElementById('vorstand-grid');
+    const hinweis = document.getElementById('vorstand-hinweis');
+    if(data && data.success && data.vorstand && data.vorstand.length && grid){
+      grid.innerHTML = data.vorstand.map(p => {
+        const name = p.Name || 'Name folgt';
+        const funktion = p.Funktion || '';
+        const tel = p.Telefon || '';
+        const email = p.Email || '';
+        return `<div class="mv-card" style="width:210px;">
+          <div class="mv-card-logo">👤</div>
+          <div class="mv-card-name">${esc(name)}</div>
+          <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">${esc(funktion)}</div>
+          <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.5;">
+            ${email ? `<a href="mailto:${esc(email)}" style="color:var(--faint);">${esc(email)}</a><br>` : ''}
+            ${tel ? `<a href="tel:${esc(tel)}" style="color:var(--faint);">${esc(tel)}</a>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+      if(hinweis) hinweis.remove();
+    }
+  } catch(err){ console.warn('bbk5 Vorstand Fehler:', err); }
+
+  // ── Kontakte ──
+  try {
+    const resp = await fetch(GAS + '?action=getBbkKontakte');
+    const data = await resp.json();
+    if(data && data.success && data.data && Object.keys(data.data).length){
+      const k = data.data;
+      const grid = document.getElementById('ko-grid');
+      if(grid){
+        const web = k.Website || '';
+        const email = k.Email || '';
+        const tel = k.Telefon || '';
+        const app = k.Vereins_App || '';
+        const soc = [];
+        if(k.Facebook) soc.push(`<a class="ko-soc-a" href="${esc(k.Facebook)}" target="_blank" rel="noopener" title="Facebook">📘</a>`);
+        if(k.Instagram) soc.push(`<a class="ko-soc-a" href="${esc(k.Instagram)}" target="_blank" rel="noopener" title="Instagram">📸</a>`);
+        if(k.YouTube) soc.push(`<a class="ko-soc-a" href="${esc(k.YouTube)}" target="_blank" rel="noopener" title="YouTube">▶️</a>`);
+
+        grid.innerHTML = `
+          <div class="ko-card">
+            <div class="ko-card-icon">🌐</div>
+            <div class="ko-card-title">Website</div>
+            <div class="ko-card-content">
+              ${web ? `<a href="${esc(web)}" target="_blank" rel="noopener">${esc(web.replace(/https?:\/\//,''))}</a>` : '–'}
+              ${email ? `<br><a href="mailto:${esc(email)}">${esc(email)}</a>` : ''}
+              ${tel ? `<br><a href="tel:${esc(tel)}">${esc(tel)}</a>` : ''}
+            </div>
+          </div>
+          <div class="ko-card">
+            <div class="ko-card-icon">📱</div>
+            <div class="ko-card-title">Social Media</div>
+            <div class="ko-card-content">${soc.length ? '' : 'Noch keine Social-Media-Profile hinterlegt.'}</div>
+            ${soc.length ? `<div class="ko-soc-row">${soc.join('')}</div>` : ''}
+          </div>
+          <div class="ko-card">
+            <div class="ko-card-icon">📲</div>
+            <div class="ko-card-title">Vereins-App</div>
+            <div class="ko-card-content">Alle Inhalte direkt auf deinem Smartphone – immer aktuell.</div>
+            ${app ? `<div style="margin-top:16px;"><a href="${esc(app)}" target="_blank" rel="noopener" class="app-direct-btn" style="font-size:12px;padding:10px 18px;">Zur App →</a></div>` : ''}
+          </div>`;
+      }
+    }
+  } catch(err){ console.warn('bbk5 Kontakte Fehler:', err); }
+});
+</script>
+
+<!-- 12. FOOTER -->
+<footer class="ftr">
+  <div class="ftr-top">
+    <div>
+      <div class="ftr-brand">
+        <div class="ftr-logo-ph" id="ftr-logo-ph">ON</div>
+        <div class="ftr-name" id="ftr-name">Verein</div>
+      </div>
+      <div class="ftr-tagline" id="ftr-tagline">Powered by ONLANG – Deine digitale Vereinsplattform</div>
+      <nav class="ftr-nav">
+        <a href="#start">Basketballkreis</a>
+        <a href="https://www.wbv-online.net" target="_blank" rel="noopener">WBV</a>
+        <a href="https://www.basketball-bund.de" target="_blank" rel="noopener">DBB</a>
+        <a href="#mitgliedsvereine">Mitgliedsvereine</a>
+        <a href="#" id="ftr-impressum-link">Impressum</a>
+        <a href="#" id="ftr-datenschutz-link">Datenschutz</a>
+      </nav>
+    </div>
+    <div class="ftr-right">
+      <div class="ftr-powered">Powered by <a href="https://onlang.de" target="_blank" rel="noopener">ONLANG</a></div>
+    </div>
+  </div>
+  <div class="ftr-bottom">
+    <div class="ftr-legal">
+      <a href="#" id="ftr-impressum">Impressum</a>
+      <a href="#" id="ftr-datenschutz">Datenschutz</a>
+      <a href="#" id="ftr-nutzung">Nutzungsbedingungen</a>
+    </div>
+    <div class="ftr-copy" id="ftr-copy">© <span id="ftr-year"></span> – Alle Rechte vorbehalten</div>
+  </div>
+</footer>
+
+<!-- ARTIKEL-DETAIL (Modal) -->
+<div id="artikel-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);overflow-y:auto;backdrop-filter:blur(4px);" onclick="schliesseArtikel(event)">
+  <div style="max-width:800px;margin:48px auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--rx);overflow:hidden;" onclick="event.stopPropagation()">
+    <div id="artikel-bild-wrap"></div>
+    <div style="padding:32px 36px 40px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span id="artikel-tag" style="background:var(--primary);color:#fff;font-family:var(--fb);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:3px;"></span>
+        <span id="artikel-datum" style="font-size:12px;color:var(--text-faint);font-family:var(--fd);"></span>
+      </div>
+      <h1 id="artikel-titel" style="font-family:var(--font-headline);font-size:clamp(22px,4vw,36px);font-weight:500;text-transform:uppercase;line-height:1.1;letter-spacing:0;margin-bottom:14px;"></h1>
+      <p id="artikel-teaser" style="font-size:16px;color:var(--text-dim);line-height:1.65;margin-bottom:24px;border-left:3px solid var(--primary);padding-left:16px;font-style:italic;"></p>
+      <div id="artikel-body" style="font-size:15px;line-height:1.75;color:var(--text);"></div>
+    </div>
+    <button onclick="schliesseArtikel()" style="position:absolute;top:16px;right:16px;width:36px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;color:var(--text-dim);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</button>
+  </div>
+</div>
+
+<!-- ══ TEAM-DETAIL MODAL ══ -->
+<div id="team-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);overflow-y:auto;backdrop-filter:blur(4px);" onclick="schliesseTeamModal(event)">
+  <div style="max-width:700px;margin:48px auto 80px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rx);overflow:hidden;position:relative;" onclick="event.stopPropagation()">
+    <button onclick="schliesseTeamModal()" style="position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:50%;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;">✕</button>
+    <div id="team-modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// ONLANG Template 7 – SportMagazin  Phase 4.1
+// Einzige Datenquelle: ONLANG Studio (getStudioBeitraege)
+// normBeitrag() = gemeinsame Basis für alle Templates.
+// Unterschiede zwischen Templates: NUR Layout, nie Daten.
+// ═══════════════════════════════════════════════════════
+
+const GAS = 'https://script.google.com/macros/s/AKfycbyUP8wHkErf7a20HJemThwY4Vq0xjQiCskpXDWwqysG2y3BCKMulLTRZ7-Fs0LbFoBacg/exec';
+const EV_ARTEN = ['camp','turnier','jahreshauptversammlung','vereinsfest','probetraining','trainerfortbildung','veranstaltung','event','fest','feier','hauptversammlung'];
+
+function kid(){return(new URLSearchParams(window.location.search).get('kunde')||new URLSearchParams(window.location.search).get('kundenId')||'').toUpperCase();}
+const KUNDE=kid();
+
+// ── Globale Hilfsfunktionen ──────────────────────────────
+function fixU(s){return String(s||'').replace(/Ã¼/g,'ü').replace(/Ã¶/g,'ö').replace(/Ã¤/g,'ä').replace(/ÃŸ/g,'ß').replace(/Ã–/g,'Ö').replace(/Ã„/g,'Ä').replace(/Ã/g,'Ü');}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function stripH(h){return(h||'').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();}
+function fmtD(v){if(!v)return'';const s=String(v);if(/^\d{2}\.\d{2}\.\d{4}/.test(s))return s.substring(0,10);try{const d=new Date(s);if(!isNaN(d))return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{}return s;}
+function dateParts(v){const s=fmtD(v);if(!s)return null;const p=s.split('.');const mo=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];return{day:p[0],mon:mo[parseInt(p[1])-1]||p[1]};}
+function ytThumb(u){const m=String(u||'').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?`https://img.youtube.com/vi/${m[1]}/mqdefault.jpg`:null;}
+
+// ═══════════════════════════════════════════════════════
+// ZENTRALE BILD-OPTIMIERUNG – alle Kanäle
+// Egal welches Format hochgeladen wird – Cloudinary
+// schneidet automatisch intelligent zu (g_auto).
+// Original-URL im Sheet bleibt IMMER unverändert.
+//
+// Kanäle:
+//   'website'   → 1600×700  (16:7  Hero)
+//   'app'       → 800×450   (16:9  App-Karte)
+//   'facebook'  → 1200×630  (16:9  FB-Post)
+//   'instagram' → 1080×1080 (1:1   IG-Post)
+//   'thumbnail' → 600×340   (16:9  Vorschau)
+//   default     → 1200×675  (16:9  allgemein)
+// ═══════════════════════════════════════════════════════
+function optimiereBildUrl(url, kanal) {
+  if (!url) return '';
+  const KANÄLE = {
+    website:   'w_1600,h_700,c_fill,g_auto,q_auto,f_jpg',
+    app:       'w_800,h_450,c_fill,g_auto,q_auto,f_jpg',
+    facebook:  'w_1200,h_630,c_fill,g_auto,q_auto,f_jpg',
+    instagram: 'w_1080,h_1080,c_fill,g_auto,q_auto,f_jpg',
+    thumbnail: 'w_600,h_340,c_fill,g_auto,q_auto,f_jpg',
+  };
+  const transform = KANÄLE[kanal] || 'w_1200,h_675,c_fill,g_auto,q_auto,f_jpg';
+  const m = String(url).match(/^(https:\/\/res\.cloudinary\.com\/[^\/]+\/image\/upload\/)(.*?)(\bv\d+\/.+)$/);
+  if (!m) return url;
+  return m[1] + transform + '/' + m[3];
+}
+// ─────────────────────────────────────────────────────────
+
+// Zentrale Normalisierung – alle Templates verwenden diese Funktion
+function normBeitrag(b){return{
+  spiel_id:    b.Spiel_ID    ||b.spiel_id    ||b.id         ||'',
+  kunden_id:   b.Kunden_ID   ||b.kunden_id   ||'',
+  vereinsname: b.Vereinsname ||b.vereinsname ||'',
+  perspektive: b.Perspektive ||b.perspektive ||'',
+  headline:    b.Headline    ||b.headline    ||b.Titel      ||b.titel     ||'',
+  teaser:      b.Teaser      ||b.teaser      ||'',
+  spielbericht:b.Spielbericht||b.spielbericht||b.Text       ||b.text      ||'',
+  app:         b.App         ||b.app         ||b.App_Text   ||'',
+  facebook:    b.Facebook    ||b.facebook    ||'',
+  instagram:   b.Instagram   ||b.instagram   ||'',
+  push:        b.Push        ||b.push        ||'',
+  newsletter:  b.Newsletter  ||b.newsletter  ||'',
+  bild_url:    b.Bild_URL    ||b.bild_url    ||b.Bild       ||'',
+  bild_typ:    b.Bild_Typ    ||b.bild_typ    ||'foto',
+  video_url:   b.Video_URL   ||b.video_url   ||b.videoUrl   ||'',
+  beitragsart: (()=>{const a=b.Beitragsart||b.beitragsart||'';const t=b.App||b.app||'';const valid=['Vereins-TV','Vereins-News','Nachbericht','Veranstaltung','Camp','Turnier','Sponsor-News','Pressemitteilung','Ehrung','Spielankündigung','Trauerfall','Vereinsfest','Sonstiges'];if(a&&valid.includes(a))return a;if(t&&valid.includes(t))return t;return b.type||b.Type||'Nachbericht';})(),
+  kategorie:   b.Kategorie   ||b.kategorie   ||b.teamIds    ||'',
+  datum:       b.Freigegeben_Am||b.freigegeben_am||b.Erstellt_Am||b.erstellt_am||b.Datum||b.datum||'',
+  erstellt_am: b.Erstellt_Am ||b.erstellt_am ||b.Datum      ||b.datum     ||'',
+  status:      b.Verein_Status||b.verein_status||'Entwurf',
+  website_status: b.Website_Status||b.website_status||'',
+};}
+
+// Website zeigt nur Beiträge die freigegeben UND für Website veröffentlicht wurden
+function nurFreigegeben(b){
+  const freigegeben = b.status==='Freigegeben';
+  const websiteAktiv = b.website_status==='Ja' || b.Website_Status==='Ja';
+  return freigegeben && websiteAktiv;
+}
+function isEv(b){return EV_ARTEN.some(v=>String(b.beitragsart||b.kategorie||'').toLowerCase().includes(v));}
+function hasVid(b){return!!b.video_url.trim();}
+async function api(p){const u=GAS+'?'+Object.entries(p).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v||'')).join('&');return(await fetch(u)).json();}
+
+let _alle=[];
+let _aktivTeam='';
+let _vereinsName='';
+
+async function init(){
+  try{
+    console.log('[T7] KUNDE:', KUNDE);
+    const studioUrl=GAS+'?action=getStudioBeitraege&kundenId='+KUNDE;
+    console.log('[T7] Studio-URL:', studioUrl);
+
+    const[bR,stR,tR,sR]=await Promise.all([
+      api({action:'get_branding',       kundenId:KUNDE}),
+      api({action:'getStudioBeitraege', kundenId:KUNDE}),
+      api({action:'get_teams',          kundenId:KUNDE}),
+      api({action:'get_sponsors',       kundenId:KUNDE})
+    ]);
+
+    console.log('[T7] branding:', bR);
+    console.log('[T7] studioR:', stR);
+    console.log('[T7] beitraege roh:', stR.beitraege?.length, 'Einträge');
+
+    const br=bR.branding||{};
+    const sponsor=stR.sponsor||null;
+    const teams=tR.teams||[];
+    const sponsors=sR.sponsors||[];
+    _vereinsName=br.Verein_Name||br.vereinsname||'';
+    _alle=(stR.beitraege||[]).map(normBeitrag).filter(nurFreigegeben);
+
+    console.log('[T7] nach normBeitrag + Filter:', _alle.length, 'freigegebene Beiträge');
+    if(_alle.length>0) console.log('[T7] erster Beitrag:', _alle[0]);
+    const videos=_alle.filter(b=>b.beitragsart==='Vereins-TV'||b.kategorie==='Vereins-TV');
+    const evs=_alle.filter(b=>isEv(b));
+    const news=_alle.filter(b=>!isEv(b)&&b.beitragsart!=='Vereins-TV'&&b.kategorie!=='Vereins-TV');
+    applyBranding(br);
+    ladeSportband();
+    renderHero(news,br);
+    // News Cards: ab Index 1 — falls weniger als 2 Beiträge, trotzdem anzeigen ab Index 0
+    const nvBeitraege = news.length > 1 ? news.slice(1,7) : news.slice(0,6);
+    renderNewsV1(nvBeitraege,br);
+    _alleTeams=teams; // global speichern für Modal
+    // Dropdown im Spielbetrieb befüllen
+    const dd=document.getElementById('sb-team-dropdown');
+    if(dd&&teams.length){
+      const aktiv=teams.filter(t=>String(t.Aktiv||t.aktiv||'Ja').trim()!=='Nein')
+        .sort((a,b)=>(Number(a.Sortierung||a.sortierung)||999)-(Number(b.Sortierung||b.sortierung)||999));
+      aktiv.forEach(t=>{
+        const val=t.Team_ID||t.team_id||'';
+        const label=t.Team_Name||t.team_name||val;
+        ['sb-team-dropdown','sb-erg-dropdown','sb-sp-dropdown'].forEach(ddId=>{
+          const d=document.getElementById(ddId);
+          if(!d)return;
+          const opt=document.createElement('option');
+          opt.value=val; opt.textContent=label;
+          d.appendChild(opt);
+        });
+      });
+    }
+    renderTeams(teams,br);
+    renderEvs(evs);
+    renderTV(videos,br);
+    renderSponsors(sponsors,br,sponsor);
+    renderKontakt(br);
+    renderApp(br);
+    initNav();
+  }catch(e){console.error('[T7]',e);}
+  finally{const l=document.getElementById('loader');l.classList.add('hide');setTimeout(()=>l.remove(),500);}
+}
+
+function applyBranding(br){
+  const root=document.documentElement;
+
+  // ── Theme aktivieren ─────────────────────────────────────
+  // br.Theme = 'dark' (default) oder 'hybrid'
+  const theme=(br.Theme||br.theme||'dark').toLowerCase();
+  document.documentElement.setAttribute('data-theme', theme==='hybrid'?'hybrid':'dark');
+
+  // ── Vereinsfarbe ──────────────────────────────────────────
+  const f=br.Thema_Farbe||'#E8541A';
+  root.style.setProperty('--primary',f);
+  const hx=f.replace('#','');
+  const[r,g,b]=[0,2,4].map(i=>parseInt(hx.substring(i,i+2),16));
+  root.style.setProperty('--primary-dim',`rgba(${r},${g},${b},0.12)`);
+  // primary-dark: 15% dunkler
+  const darken=(v,p)=>Math.max(0,Math.round(v*(1-p)));
+  root.style.setProperty('--primary-dark',`rgb(${darken(r,.15)},${darken(g,.15)},${darken(b,.15)})`);
+
+  // ── Sekundärfarbe (optional) ──────────────────────────────
+  if(br.Thema_Farbe2) root.style.setProperty('--secondary',br.Thema_Farbe2);
+
+  // ── TV-Akzent (optional, sonst bleibt Rot) ───────────────
+  if(br.TV_Farbe){
+    root.style.setProperty('--tv-accent',br.TV_Farbe);
+    const tvHx=br.TV_Farbe.replace('#','');
+    const[tr,tg,tb]=[0,2,4].map(i=>parseInt(tvHx.substring(i,i+2),16));
+    root.style.setProperty('--tv-accent-dim',`rgba(${tr},${tg},${tb},0.08)`);
+  }
+
+  // ── Schriftarten (optional, aus Website_Settings) ─────────
+  if(br.Headline_Font) root.style.setProperty('--font-headline',br.Headline_Font);
+  if(br.Body_Font)     root.style.setProperty('--font-body',br.Body_Font);
+
+  // ── Vereinsname ───────────────────────────────────────────
+  const n=br.Verein_Name||br.vereinsname||KUNDE;
+  document.getElementById('hdr-name').textContent=n;
+  document.title=n+' – SportMagazin';
+  document.getElementById('ftr-name').textContent=n;
+  document.getElementById('tv-name').innerHTML=esc(n.split(' ')[0])+'<span>-TV</span>';
+  document.getElementById('app-title').innerHTML='Die offizielle<br>'+esc(n)+'-App';
+  document.getElementById('app-sub').textContent='Alle News, Ergebnisse und Spielpläne von '+n+' direkt aufs Handy.';
+
+  // ── Logo ──────────────────────────────────────────────────
+  const logo=br.Logo_Verein||'';
+  const lw=document.getElementById('hdr-logo');
+  if(logo){lw.outerHTML=`<img id="hdr-logo" class="brand-logo" src="${esc(logo)}" alt="${esc(n)}" onerror="this.outerHTML='<div class=brand-ph>${esc(n.substring(0,2).toUpperCase())}</div>'">`;}
+  else{lw.textContent=n.substring(0,2).toUpperCase();}
+  const ll=document.getElementById('ld-logo');if(ll){ll.textContent=n.substring(0,2).toUpperCase();ll.style.background=f;}
+}
+
+// ══════════════════════════════════════════════════════
+// SPORTBAND V1 – ladeSportband()
+// Datenquelle: getSportband API → Fallback: Ergebnisse → News
+// ══════════════════════════════════════════════════════
+async function ladeSportband(){
+  const track = document.getElementById('sportband-track');
+  if(!track) return;
+
+  const ICONS = { ergebnis:'🏀', spielplan:'📅', news:'📰', tv:'🎥', hinweis:'📢' };
+
+  function renderTrack(items){
+    if(!items.length) items=[{text:'Aktuelle Informationen folgen in Kürze.',type:'hinweis',url:''}];
+    // Doppeln für nahtlosen Loop
+    const html = [...items,...items].map(it=>{
+      const icon = ICONS[it.type]||'📢';
+      const inner = `<span class="sportband-icon">${icon}</span><span>${esc(it.text)}</span>`;
+      return it.url
+        ? `<div class="sportband-item"><a href="${esc(it.url)}" target="_blank" rel="noopener">${inner}</a></div>`
+        : `<div class="sportband-item">${inner}</div>`;
+    }).join('');
+    track.innerHTML = html;
+  }
+
+  try {
+    // 1. Versuche getSportband API
+    const url = GAS+'?action=getSportband&kundenId='+encodeURIComponent(KUNDE);
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if(data.success && data.items && data.items.length){
+      renderTrack(data.items);
+      return;
+    }
+  } catch(e){ /* Fallback */ }
+
+  // 2. Fallback: Sportband_Text aus _alleErgebnisse (bereits geladen nach init)
+  // oder aus _alle (News/Beiträge)
+  try {
+    // Fallback A: Ergebnisse via API
+    const ergUrl = GAS+'?action=getErgebnisse&kundenId='+encodeURIComponent(KUNDE);
+    const ergResp = await fetch(ergUrl);
+    const ergData = await ergResp.json();
+
+    if(ergData.success && ergData.ergebnisse && ergData.ergebnisse.length){
+      const items = ergData.ergebnisse
+        .filter(e => e.Sportband_Text||e.sportband_text)
+        .slice(0,10)
+        .map(e => ({
+          text: e.Sportband_Text||e.sportband_text||'',
+          type: 'ergebnis',
+          url: ''
+        }));
+      if(items.length){ renderTrack(items); return; }
+    }
+  } catch(e){ /* weiter */ }
+
+  // Fallback B: News-Headlines aus _alle
+  if(_alle && _alle.length){
+    const items = _alle.slice(0,8).map(b=>({
+      text: b.headline||'',
+      type: b.beitragsart==='Vereins-TV'?'tv': b.beitragsart==='Veranstaltung'?'spielplan':'news',
+      url: ''
+    })).filter(it=>it.text);
+    if(items.length){ renderTrack(items); return; }
+  }
+
+  // Fallback C: Standardtext
+  renderTrack([{text:'Aktuelle Informationen folgen in Kürze.',type:'hinweis',url:''}]);
+}
+
+// Alte renderLive bleibt als leere Funktion damit kein Crash falls noch aufgerufen
+function renderLive(news,evs){}
+
+function renderHero(beitraege,br){
+  const grid=document.getElementById("hero-grid");
+  if(!beitraege.length){grid.style.display="none";return;}
+  const mitBild=beitraege.find(b=>b.bild_url);
+  const m=mitBild||beitraege[0];
+  const restMitBild=beitraege.filter(b=>b.bild_url&&b.spiel_id!==m.spiel_id);
+  const teaser=m.teaser||stripH(m.spielbericht).substring(0,180);
+  const datum=fmtD(m.datum);
+  const kat=m.beitragsart||m.kategorie||'News';
+  const bildSrc=(m.bild_typ==='grafik'||m.bild_typ==='logo')?m.bild_url:optimiereBildUrl(m.bild_url,'website');
+  const bildKlasse='hero-bg bild-'+(m.bild_typ||'foto');
+
+  // Hero-Hauptbereich: Bild oben, Text darunter
+  document.getElementById('hero-main').innerHTML=`
+    <div class="hero-wrap" onclick="zeigeArtikel('${esc(m.spiel_id)}')">
+      <div class="hero-img-wrap">
+        ${bildSrc?`<img class="${esc(bildKlasse)}" src="${esc(bildSrc)}" alt="" onerror="this.style.display='none'">`:'<div class="hero-nopic">🏀</div>'}
+      </div>
+      <div class="hero-body">
+        <div class="hero-tag">${esc(kat)}</div>
+        <div class="hero-title">${esc(m.headline)}</div>
+        ${teaser?`<div class="hero-teaser">${esc(teaser)}</div>`:''}
+        <span class="hero-read">Weiterlesen →</span>
+        ${datum?`<div class="hero-meta"><span>📅 ${datum}</span>${m.vereinsname?`<span>· ${esc(m.vereinsname)}</span>`:''}</div>`:''}
+      </div>
+    </div>`;
+
+  // Side-Panel
+  const side=document.getElementById('hero-side');
+  const si=restMitBild.slice(0,2);
+  if(!si.length){side.style.display='none';grid.classList.add('no-side');return;}
+  grid.classList.remove('no-side');
+  side.innerHTML=si.map(b=>`
+    <div class="hero-sc" onclick="zeigeArtikel('${esc(b.spiel_id)}')">
+      ${b.bild_url?`<img class="hero-si" src="${esc(optimiereBildUrl(b.bild_url,'thumbnail'))}" alt="" onerror="this.style.display='none'">`:`<div class="hero-si-ph">🏀</div>`}
+      <div class="hero-stag">${esc(b.beitragsart||b.kategorie||'News')}</div>
+      <div class="hero-stitle">${esc(b.headline||'–')}</div>
+      ${fmtD(b.datum)?`<div class="hero-sdate">📅 ${fmtD(b.datum)}</div>`:''}
+    </div>`).join('');
+}
+
+function renderNewsV1(beitraege, br){
+  const grid = document.getElementById('nv-grid');
+  const fallbackLogo = br ? (br.Logo_Verein||'') : '';
+  if(!beitraege.length){
+    document.getElementById('aktuelle-news').style.display='none';
+    return;
+  }
+  grid.innerHTML = beitraege.map(b => {
+    const te   = b.teaser || stripH(b.spielbericht).substring(0,140);
+    const kat  = b.beitragsart || b.kategorie || 'News';
+    const datum= fmtD(b.datum);
+    const vid  = b.video_url && ytId(b.video_url);
+    const imgSrc = b.bild_url
+      ? optimiereBildUrl(b.bild_url,'thumbnail')
+      : '';
+    return `
+      <div class="nv-card" onclick="zeigeArtikel('${esc(b.spiel_id)}')">
+        <div class="nv-img-wrap">
+          ${imgSrc
+            ? `<img class="nv-img" src="${esc(imgSrc)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=nv-ph>🏀</div>'">`
+            : `<div class="nv-ph">🏀</div>`}
+          ${vid ? `<div class="nv-vid-badge">▶ Video</div>` : ''}
+        </div>
+        <div class="nv-body">
+          <div class="nv-meta">
+            <span class="nv-cat">${esc(kat)}</span>
+            ${datum ? `<span class="nv-date">📅 ${datum}</span>` : ''}
+          </div>
+          <div class="nv-headline">${esc(b.headline||'–')}</div>
+          ${te ? `<div class="nv-teaser">${esc(te)}</div>` : ''}
+          <span class="nv-link">Weiterlesen →</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTeams(teams,br){
+  const row=document.getElementById('teams-row');
+  // Sortierung falls vorhanden, sonst Reihenfolge aus Sheet
+  // Aktiv-Filter: nur ausblenden wenn explizit 'Nein'
+  const aktiveTeams = teams
+    .filter(t => String(t.Aktiv||t.aktiv||'Ja').trim() !== 'Nein')
+    .sort((a,b) => (Number(a.Sortierung||a.sortierung)||999) - (Number(b.Sortierung||b.sortierung)||999));
+  let chips=[`<div class="team-chip on" onclick="filterTeam('',this)"><div class="team-ring"><div class="team-in" style="font-size:26px;">🏀</div></div><div class="team-n">Alle</div></div>`];
+  if(aktiveTeams.length){
+    chips=chips.concat(aktiveTeams.map(t=>{
+      const n=t.Team_Name||t.team_name||t.Mannschaftsname||'–';
+      const f=t.Team_Foto||t.team_foto||'';
+      const ini=n.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+      return`<div class="team-chip" onclick="filterTeam('${esc(n)}',this)"><div class="team-ring"><div class="team-in">${f?`<img src="${esc(f)}" alt="" onerror="this.parentElement.innerHTML='<span style=font-size:13px;font-weight:900>${ini}</span>'">`:`<span style="font-size:13px;font-weight:900">${ini}</span>`}</div></div><div class="team-n">${esc(n)}</div></div>`;
+    }));
+  }
+  if(chips.length>1)row.innerHTML=chips.join('');
+  else document.getElementById('teams').style.display='none';
+}
+
+function filterTeam(name,el){
+  _aktivTeam=name;
+  document.querySelectorAll('.team-chip').forEach(c=>c.classList.toggle('on',c===el));
+  if(name) {
+    // Team angeklickt → Modal öffnen
+    const t=_alleTeams.find(x=>(x.Team_Name||x.team_name||'')===name);
+    if(t) { zeigeTeamModal(t); return; }
+  }
+  // "Alle" → nur filtern, kein Modal
+  document.getElementById('aktuelle-news').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+let _alleTeams=[];
+
+function zeigeTeamModal(t){
+  const name  = t.Team_Name||t.team_name||'–';
+  const liga  = t.Liga||t.liga||'';
+  const foto  = t.Team_Foto||t.team_foto||'';
+  const trainer=t.Trainer||t.trainer||'';
+  const trainerFoto=t.Trainer_Foto||t.trainer_foto||'';
+  const halle = t.Halle||t.halle||'';
+  const adresse=t.Hallenadresse||t.hallenadresse||t.Halle_Adresse||'';
+  const training=t.Trainingszeiten||t.trainingszeiten||t.Training||'';
+  const training2=t.Trainingszeiten2||t.trainingszeiten2||t.Training2||'';
+  const ini   = name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+
+  // Aktuelle Beiträge dieses Teams (passende Headline/Kategorie)
+  const teamNews=_alle.filter(b=>
+    String(b.headline||'').toLowerCase().includes(name.toLowerCase().split(' ')[0]) ||
+    String(b.kategorie||b.beitragsart||'').toLowerCase().includes(name.toLowerCase().split(' ')[0]) ||
+    String(b.team||'').toLowerCase()===name.toLowerCase()
+  ).slice(0,3);
+
+  document.getElementById('team-modal-body').innerHTML=`
+    <!-- Hero: Teamfoto -->
+    <div style="width:100%;aspect-ratio:16/7;background:var(--card);overflow:hidden;position:relative;">
+      ${foto
+        ? `<img src="${esc(foto)}" alt="${esc(name)}" style="width:100%;height:100%;object-fit:cover;">`
+        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:80px;opacity:.1;">🏀</div>`}
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.8) 0%,transparent 60%);"></div>
+      <div style="position:absolute;bottom:20px;left:24px;">
+        ${liga?`<div style="display:inline-block;background:var(--primary);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:3px;margin-bottom:8px;">${esc(liga)}</div>`:''}
+        <h2 style="font-family:var(--font-headline);font-size:clamp(22px,4vw,36px);font-weight:500;text-transform:uppercase;color:var(--text-on-dark);line-height:1.1;letter-spacing:0;margin:0;">${esc(name)}</h2>
+      </div>
+    </div>
+
+    <!-- Info-Bereich -->
+    <div style="padding:28px 32px 32px;display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Trainer -->
+      ${trainer?`
+      <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+        ${trainerFoto
+          ? `<img src="${esc(trainerFoto)}" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+          : `<div style="width:56px;height:56px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏋</div>`}
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-faint);margin-bottom:3px;">Trainer/in</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);">${esc(trainer)}</div>
+        </div>
+      </div>`:''}
+
+      <!-- Trainingszeiten -->
+      ${(training||training2)?`
+      <div style="padding:16px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-faint);margin-bottom:10px;">⏰ Trainingszeiten</div>
+        ${training?`<div style="font-size:14px;color:var(--text);margin-bottom:${training2?'6px':'0'};">🏀 ${esc(training)}</div>`:''}
+        ${training2?`<div style="font-size:14px;color:var(--text);">🏀 ${esc(training2)}</div>`:''}
+      </div>`:''}
+
+      <!-- Halle -->
+      ${(halle||adresse)?`
+      <div style="padding:16px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-faint);margin-bottom:10px;">📍 Sporthalle</div>
+        ${halle?`<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;">${esc(halle)}</div>`:''}
+        ${adresse?`<div style="font-size:13px;color:var(--text-dim);">${esc(adresse)}</div>`:''}
+        ${adresse?`<a href="https://maps.google.com/?q=${encodeURIComponent(adresse)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:12px;color:var(--primary);font-weight:600;">🗺 Route planen →</a>`:''}
+      </div>`:''}
+
+      <!-- Aktuelle News dieses Teams -->
+      ${teamNews.length?`
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-faint);margin-bottom:12px;">📰 Aktuelle Berichte</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${teamNews.map(b=>`
+          <div onclick="schliesseTeamModal();setTimeout(()=>zeigeArtikel('${esc(b.spiel_id)}'),200)" style="display:flex;gap:12px;align-items:center;padding:12px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);cursor:pointer;">
+            ${b.bild_url?`<img src="${esc(optimiereBildUrl(b.bild_url,'thumbnail'))}" style="width:60px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0;" alt="">`:
+            `<div style="width:60px;height:40px;background:var(--surface3);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🏀</div>`}
+            <div>
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--primary);margin-bottom:3px;">${esc(b.beitragsart||'News')}</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);line-height:1.3;">${esc(b.headline||'–')}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`:''}
+
+      <!-- SPORTDATEN-BEREICH -->
+      <div class="sd-wrap" id="sd-wrap-${esc(t.Team_ID||'')}">
+        <div class="sd-tabs">
+          <div class="sd-tab on" onclick="sdTab(this,'sd-tabelle-${esc(t.Team_ID||'')}')">📊 Tabelle</div>
+          <div class="sd-tab disabled" title="Demnächst">🏀 Ergebnisse</div>
+          <div class="sd-tab disabled" title="Demnächst">📅 Spielplan</div>
+        </div>
+        <div class="sd-panel on" id="sd-tabelle-${esc(t.Team_ID||'')}">
+          <div class="sd-loading">Lade Tabelle…</div>
+        </div>
+      </div>
+
+    </div>`;
+
+  document.getElementById('team-modal').style.display='block';
+  document.body.style.overflow='hidden';
+
+  // Tabelle laden
+  const teamId = t.Team_ID||t.team_id||'';
+  const teamName = t.Team_Name||t.team_name||'';
+  if(teamId) ladeSportTabelle(teamId, teamName);
+  else document.getElementById('sd-wrap-')&&(document.getElementById('sd-wrap-').style.display='none');
+}
+
+function schliesseTeamModal(e){
+  if(e&&e.target!==document.getElementById('team-modal'))return;
+  document.getElementById('team-modal').style.display='none';
+  document.body.style.overflow='';
+}
+
+// ── Spielbetrieb: Team-Auswahl Dropdown ──────────────────
+function sbWaehleTeam(teamId){
+  const inhalt=document.getElementById('sb-tabelle-inhalt');
+  if(!teamId){inhalt.innerHTML='';return;}
+  const t=_alleTeams.find(x=>(x.Team_ID||x.team_id||'')===teamId);
+  if(!t)return;
+  // Tabellen-Panel direkt in sb-tabelle-inhalt rendern
+  inhalt.innerHTML=`<div class="sd-wrap" id="sb-sd-wrap-${esc(teamId)}"><div class="sd-panel on" id="sb-sd-tabelle-${esc(teamId)}"><div class="sd-loading">Lade Tabelle…</div></div></div>`;
+  sbLadeSportTabelle(teamId, t.Team_Name||t.team_name||'');
+}
+
+async function sbLadeSportTabelle(teamId, teamName){
+  const panelId='sb-sd-tabelle-'+teamId;
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+  try{
+    const url=GAS+'?action=getTabellen&kundenId='+encodeURIComponent(KUNDE)+'&teamId='+encodeURIComponent(teamId);
+    const resp=await fetch(url);
+    const data=await resp.json();
+    if(!data.success||!data.tabellen||!data.tabellen.length){panel.innerHTML='<div class="sd-empty">Keine Tabelle verfügbar.</div>';return;}
+    const tab=data.tabellen[0];
+    const zeilen=tab.zeilen||[];
+    if(!zeilen.length){panel.innerHTML='<div class="sd-empty">Keine Tabelle verfügbar.</div>';return;}
+    function fmtAkt(s){if(!s)return'';try{const d=new Date(s);if(!isNaN(d))return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+' Uhr';}catch(e){}return s;}
+    const suchname=(tab.suchname||teamName||'').toLowerCase();
+    panel.innerHTML=`
+      <table class="sd-table">
+        <thead><tr><th class="sd-rang">#</th><th>Team</th><th class="r">Sp.</th><th class="r">S</th><th class="r">N</th><th class="r">Pkt.</th></tr></thead>
+        <tbody>${zeilen.map((z,i)=>{
+          const tn=fixU(z.Team_Name||z.teamName||z.teamname||z.Teamname||z.Team||'');
+          const suchwörter=suchname.split(' ').filter(w=>w.length>3);
+          const istWir=suchname&&suchwörter.some(w=>tn.toLowerCase().includes(w.toLowerCase()));
+          return`<tr${istWir?' class="eigenes-team"':''}><td class="sd-rang">${z.Rang||z.rang||i+1}</td><td class="sd-teamname">${esc(tn)}${istWir?' ◄':''}</td><td class="r">${z.Spiele||z.spiele||''}</td><td class="r">${z.Siege||z.siege||''}</td><td class="r">${z.Niederlagen||z.niederlagen||''}</td><td class="r">${z.Punkte||z.punkte||''}</td></tr>`;
+        }).join('')}</tbody>
+      </table>
+      ${tab.aktualisiert?`<div class="sd-updated">Stand: ${fmtAkt(tab.aktualisiert)}</div>`:''}`;
+  }catch(err){panel.innerHTML='<div class="sd-empty">Tabelle konnte nicht geladen werden.</div>';console.warn('sbLadeSportTabelle:',err);}
+}
+
+// ── Spielbetrieb: Tab-Wechsel ─────────────────────────────
+function sbTab(el, panelId){
+  el.closest('.sb-tabs').querySelectorAll('.sb-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('on'));
+  const panel=document.getElementById(panelId);
+  if(panel)panel.classList.add('on');
+}
+
+// ── Spielbetrieb: Ergebnisse laden ───────────────────────
+let _ergGeladenFuer = '';
+// ── Ergebnisse: globaler Cache ───────────────────────────
+let _alleErgebnisse = [];
+let _ergGeladen = false;
+
+async function sbInitErgebnisse(){
+  const inhalt = document.getElementById('sb-ergebnisse-inhalt');
+  if(!inhalt) return;
+  if(_ergGeladen){ sbRenderErgebnisse(_alleErgebnisse); return; }
+  inhalt.innerHTML = '<div class="erg-loading">Lade Ergebnisse…</div>';
+  try {
+    const url = GAS + '?action=getErgebnisse&kundenId=' + encodeURIComponent(KUNDE);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if(!data.success || !data.ergebnisse || !data.ergebnisse.length){
+      inhalt.innerHTML = '<div class="erg-empty">Keine Ergebnisse vorhanden.</div>';
+      return;
+    }
+    _alleErgebnisse = data.ergebnisse;
+    _ergGeladen = true;
+    sbRenderErgebnisse(_alleErgebnisse);
+  } catch(err){
+    inhalt.innerHTML = '<div class="erg-empty">Ergebnisse konnten nicht geladen werden.</div>';
+    console.warn('sbInitErgebnisse Fehler:',err);
+  }
+}
+
+function sbFilterErgebnisse(teamId){
+  if(!teamId) { sbRenderErgebnisse(_alleErgebnisse); return; }
+  sbRenderErgebnisse(_alleErgebnisse.filter(e=>(e.Team_ID||e.team_id||'')===teamId));
+}
+
+function sbRenderErgebnisse(liste){
+  const inhalt = document.getElementById('sb-ergebnisse-inhalt');
+  if(!inhalt) return;
+  if(!liste.length){ inhalt.innerHTML='<div class="erg-empty">Keine Ergebnisse für diese Mannschaft.</div>'; return; }
+
+
+  const cards = liste.map(e => {
+      const status = e.ergebnisStatus||e.Ergebnis_Status||'Unklar';
+      const statusClass = status==='Sieg'?'sieg':status==='Niederlage'?'niederlage':status==='Unentschieden'?'unentschieden':'unklar';
+      const heim = fixU(e.heim||e.Heim);
+      const gast = fixU(e.gast||e.Gast);
+      const gegner = fixU(e.gegner||e.Gegner);
+      const endstand = ((e.endstand||e.Endstand||'')).replace(/\s/g,'');
+
+      // Hervorheben welches Team unser Verein ist
+      const heimGast = e.vereinHeimGast||e.Verein_HeimGast||'';
+      const heimIstWir = heimGast ? heimGast==='Heim' : (_vereinsName||'').toLowerCase().split(/\s+/).filter(w=>w.length>4).some(w=>heim.toLowerCase().includes(w));
+
+      // Datum formatieren: "Sat Mar 07 2026 00:00:00 GMT+..." → "07.03.2026"
+      const rohdatum = e.datum||e.Datum||'';
+      const datumFormatiert = (()=>{
+        if(!rohdatum) return '';
+        if(/^\d{2}\.\d{2}\.\d{4}/.test(rohdatum)) return rohdatum.substring(0,10);
+        try{ const d=new Date(rohdatum); if(!isNaN(d)) return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }catch(e){}
+        return rohdatum;
+      })();
+      // Uhrzeit formatieren: "Sat Dec 30 1899 18:00:00 GMT+..." → "18:00"
+      const rohzeit = e.uhrzeit||e.Uhrzeit||'';
+      const uhrzeitFormatiert = (()=>{
+        if(!rohzeit) return '';
+        if(/^\d{2}:\d{2}/.test(rohzeit)) return rohzeit.substring(0,5);
+        try{ const d=new Date(rohzeit); if(!isNaN(d)) return d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
+        return rohzeit;
+      })();
+
+      // Team-Name aus _alleTeams lookup
+      const teamId = e.Team_ID||e.team_id||'';
+      const teamObj = _alleTeams.find(t=>(t.Team_ID||t.team_id||'')===teamId);
+      const teamName = teamObj ? (teamObj.Team_Name||teamObj.team_name||teamId) : teamId;
+
+      return `<div class="erg-card">
+        <div class="erg-date">
+          ${teamName?`<span style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);margin-bottom:4px;">${esc(teamName)}</span>`:''}
+          <span class="erg-date-day">${esc(datumFormatiert)}</span>
+          <span class="erg-date-time">${esc(uhrzeitFormatiert)} Uhr</span>
+        </div>
+        <div class="erg-teams">
+          <div class="erg-team${heimIstWir?' eigenes':''}">${esc(heim)}</div>
+          <div class="erg-team${!heimIstWir?' eigenes':''}">${esc(gast)}</div>
+        </div>
+        <div class="erg-score">${esc(endstand||'–:–')}</div>
+        <div class="erg-status">
+          <span class="erg-badge ${statusClass}">${esc(status)}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+  inhalt.innerHTML = `<div class="erg-grid">${cards}</div>`;
+}
+
+// ── Spielplan: Platzhalter (bereit für getSpielplan API) ─
+function sbFilterSpielplan(teamId){
+  // Wird aktiviert sobald getSpielplan() API verfügbar ist
+  const inhalt = document.getElementById('sb-spielplan-inhalt');
+  if(inhalt) inhalt.innerHTML='<div class="sb-hint">Spielplan wird vorbereitet – bald verfügbar.</div>';
+}
+
+// ── Sportdaten: Tab-Wechsel ───────────────────────────────
+function sdTab(el, panelId){
+  // Tabs: nur aktive (nicht disabled) umschalten
+  const tabs=el.parentElement.querySelectorAll('.sd-tab:not(.disabled)');
+  tabs.forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  // Panels: alle ausblenden, nur aktives einblenden
+  const wrap=el.closest('.sd-wrap');
+  wrap.querySelectorAll('.sd-panel').forEach(p=>p.classList.remove('on'));
+  const panel=document.getElementById(panelId);
+  if(panel)panel.classList.add('on');
+}
+
+// ── Sportdaten: Tabelle laden ─────────────────────────────
+async function ladeSportTabelle(teamId, teamName){
+  const panelId='sd-tabelle-'+teamId;
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+
+  try{
+    const url=GAS+'?action=getTabellen&kundenId='+encodeURIComponent(KUNDE)+'&teamId='+encodeURIComponent(teamId);
+    const resp=await fetch(url);
+    const data=await resp.json();
+
+    if(!data.success||!data.tabellen||!data.tabellen.length){
+      const wrap=panel.closest('.sd-wrap');
+      if(wrap)wrap.style.display='none';
+      return;
+    }
+
+    const tab=data.tabellen[0];
+    const zeilen=tab.zeilen||[];
+    if(!zeilen.length){
+      const wrap=panel.closest('.sd-wrap');
+      if(wrap)wrap.style.display='none';
+      return;
+    }
+
+    // Fix 1: Umlaut-Korrektur (ISO-8859-1 Reste bereinigen)
+    function fixUmlaute(s){
+      return String(s||'')
+        .replace(/Ã¼/g,'ü').replace(/Ã¶/g,'ö').replace(/Ã¤/g,'ä')
+        .replace(/Ã\u009c/g,'Ü').replace(/Ã–/g,'Ö').replace(/Ã„/g,'Ä')
+        .replace(/ÃŸ/g,'ß').replace(/Ã\u009f/g,'ß')
+        .replace(/SÃ¼/g,'Sü').replace(/WeiÃŸ/g,'Weiß')
+        .replace(/DÃ¼/g,'Dü').replace(/GiÃ¼/g,'Giü');
+    }
+
+    // Fix 2: Datum formatieren ("Mon Jun 29 2026..." → "29.06.2026 11:01 Uhr")
+    function fmtAktualisiert(s){
+      if(!s)return'';
+      // Bereits im Format "29.06.2026 11:01" → direkt verwenden
+      if(/^\d{2}\.\d{2}\.\d{4}/.test(s))return s+' Uhr';
+      // JS-Datum-String parsen
+      try{
+        const d=new Date(s);
+        if(isNaN(d))return s;
+        const pad=n=>String(n).padStart(2,'0');
+        return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())+' Uhr';
+      }catch{return s;}
+    }
+
+    // Fix 3: Eigenes Team erkennen anhand globalem Vereinsname (aus Branding)
+    // _vereinsName z.B. "Verein Name" → Wörter mit >4 Zeichen
+    const vWoerter=(_vereinsName||'').toLowerCase()
+      .split(/\s+/).filter(w=>w.length>4);
+
+    const rows=zeilen.map(z=>{
+      const tn=fixUmlaute(z.Team_Name||z.teamName||z.teamname||z.Team||'');
+      const tnLower=tn.toLowerCase();
+      const istEigen=vWoerter.length>0&&vWoerter.some(w=>tnLower.includes(w));
+
+      // Fix 4: Punkte selbst berechnen (Basketball: Sieg=2Pkt, Niederlage=1Pkt)
+      const siege=Number(z.Siege||z.siege)||0;
+      const niederlagen=Number(z.Niederlagen||z.niederlagen)||0;
+      const punkte=(siege*2)+niederlagen;
+
+      return`<tr class="${istEigen?'eigenes-team':''}">
+        <td class="sd-rang">${z.Rang||z.rang||''}</td>
+        <td class="sd-teamname">${esc(tn)}${istEigen?' ◀':''}</td>
+        <td class="r">${z.Spiele||z.spiele||''}</td>
+        <td class="r">${siege}</td>
+        <td class="r">${niederlagen}</td>
+        <td class="r" style="font-weight:700;">${punkte}</td>
+      </tr>`;
+    }).join('');
+
+    panel.innerHTML=`
+      <table class="sd-table">
+        <thead><tr>
+          <th style="width:24px">#</th>
+          <th>Team</th>
+          <th class="r">Sp.</th>
+          <th class="r">S</th>
+          <th class="r">N</th>
+          <th class="r">Pkt.</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${tab.aktualisiert?`<div class="sd-updated">Stand: ${fmtAktualisiert(tab.aktualisiert)}</div>`:''}
+    `;
+
+  }catch(err){
+    panel.innerHTML=`<div class="sd-empty">Tabelle konnte nicht geladen werden.</div>`;
+    console.warn('ladeSportTabelle Fehler:',err);
+  }
+}
+
+function renderEvs(evs){
+  const grid=document.getElementById('ev-grid');
+  if(!evs.length){document.getElementById('veranstaltungen').style.display='none';return;}
+  grid.innerHTML=evs.slice(0,6).map(b=>{const dp=dateParts(b.datum);const te=b.teaser||stripH(b.spielbericht).substring(0,100);return`<div class="ev-card" onclick="zeigeArtikel('${esc(b.spiel_id)}')">${dp?`<div class="ev-date"><div class="ev-day">${dp.day}</div><div class="ev-mon">${dp.mon}</div></div>`:''}<div class="ev-body"><div class="ev-art">${esc(b.beitragsart||b.kategorie||'Veranstaltung')}</div><div class="ev-title">${esc(b.headline||'–')}</div>${te?`<div class="ev-text">${esc(te)}</div>`:''}</div></div>`;}).join('');
+}
+
+function ytId(u){const m=String(u||'').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null;}
+
+let _tvVideos=[];
+let _tvAktivIdx=0;
+
+function renderTV(videos,br){
+  if(!videos.length){document.getElementById('tv').style.display='none';return;}
+  _tvVideos=videos;
+
+  // Vereinsname → TV-Name (z.B. "Verein Name" → "VEREIN-TV")
+  const vn=(br.Verein_Name||br.Vereinsname||br.vereinsname||'Verein').split(' ')[0].toUpperCase();
+  document.getElementById('tv-name').innerHTML=`${vn}<span>-TV</span>`;
+
+  // Erstes Video laden
+  tvLadeVideo(0);
+
+  // Thumbnails unter dem Player
+  const thumbs=document.getElementById('tv-thumbs');
+  thumbs.innerHTML=videos.map((v,i)=>{
+    const vid=ytId(v.video_url);
+    const th=vid?`https://img.youtube.com/vi/${vid}/mqdefault.jpg`:'';
+    return`<div class="tv-thumb-item${i===0?' active':''}" id="tv-thumb-${i}" onclick="tvLadeVideo(${i})">
+      ${th?`<img src="${th}" alt="" loading="lazy">`:`<div class="tv-thumb-item-ph">▶</div>`}
+    </div>`;
+  }).join('');
+
+  // Playlist rechts
+  const list=document.getElementById('tv-playlist-list');
+  list.innerHTML=videos.map((v,i)=>{
+    const vid=ytId(v.video_url);
+    const th=vid?`https://img.youtube.com/vi/${vid}/mqdefault.jpg`:'';
+    const kat=v.beitragsart||v.kategorie||'Video';
+    return`<div class="tv-playlist-item${i===0?' active':''}" id="tv-pl-${i}" onclick="tvLadeVideo(${i})">
+      <div class="tv-pl-num">${i+1}</div>
+      ${th?`<img class="tv-pl-thumb" src="${th}" alt="" loading="lazy">`:`<div class="tv-pl-thumb-ph">▶</div>`}
+      <div class="tv-pl-info">
+        <div class="tv-pl-kat">${esc(kat)}</div>
+        <div class="tv-pl-title">${esc(v.headline||'–')}</div>
+        ${fmtD(v.datum)?`<div class="tv-pl-date">📅 ${fmtD(v.datum)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tvLadeVideo(idx){
+  const v=_tvVideos[idx];
+  if(!v)return;
+  _tvAktivIdx=idx;
+
+  // Active-Status Thumbnails + Playlist
+  document.querySelectorAll('.tv-thumb-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  document.querySelectorAll('.tv-playlist-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+
+  // Playlist: aktives Item in Sicht scrollen
+  const plItem=document.getElementById('tv-pl-'+idx);
+  if(plItem)plItem.scrollIntoView({block:'nearest'});
+
+  // Hauptvideo
+  const vid=ytId(v.video_url);
+  const player=document.getElementById('tv-player');
+  if(vid){
+    player.innerHTML=`<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}?autoplay=1&rel=0&modestbranding=1" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen style="display:block;width:100%;height:100%;"></iframe>`;
+  } else {
+    player.innerHTML=`<div class="tv-player-nopic">▶</div>`;
+  }
+
+  // Info unter dem Player
+  const kat=v.beitragsart||v.kategorie||'Video';
+  document.getElementById('tv-main-info').innerHTML=`
+    <div class="tv-main-kat">${esc(kat)}</div>
+    <div class="tv-main-title">${esc(v.headline||'–')}</div>
+    ${fmtD(v.datum)?`<div class="tv-main-date">📅 ${fmtD(v.datum)}</div>`:''}
+  `;
+}
+
+function renderNews(beitraege){
+  const grid=document.getElementById('news-grid');
+  if(!grid)return; // Kein news-grid Container vorhanden – kein Fehler
+  if(!beitraege.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1;">${_aktivTeam?`Keine Beiträge für „${esc(_aktivTeam)}" gefunden.`:'Noch keine Beiträge vorhanden.'}</div>`;return;}
+  grid.innerHTML=beitraege.map(b=>{const te=b.teaser||stripH(b.spielbericht).substring(0,120);return`<div class="nc" onclick="zeigeArtikel('${esc(b.spiel_id)}')">${b.bild_url?`<img class="nc-img" src="${esc(optimiereBildUrl(b.bild_url,'thumbnail'))}" alt="" loading="lazy" onerror="this.style.display='none'">`:`<div class="nc-ph">🏀</div>`}<div class="nc-body"><div class="nc-art">${esc(b.beitragsart||b.kategorie||'News')}</div><div class="nc-title">${esc(b.headline||'–')}</div>${te?`<div class="nc-teaser">${esc(te)}</div>`:''}${fmtD(b.datum)?`<div class="nc-date">📅 ${fmtD(b.datum)}</div>`:''}</div></div>`;}).join('');
+}
+
+function zeigeArtikel(spiel_id){
+  const b=_alle.find(x=>x.spiel_id===spiel_id);if(!b)return;
+  document.getElementById('artikel-bild-wrap').innerHTML=b.bild_url?`<img src="${esc((b.bild_typ==='grafik'||b.bild_typ==='logo')?b.bild_url:optimiereBildUrl(b.bild_url,'website'))}" alt="" style="width:100%;max-height:420px;object-fit:${(b.bild_typ==='grafik'||b.bild_typ==='logo')?'contain':'cover'};background:var(--bg);" onerror="this.remove()">`:'' ;
+  document.getElementById('artikel-tag').textContent=b.beitragsart||b.kategorie||'News';
+  document.getElementById('artikel-datum').textContent=fmtD(b.datum)?'📅 '+fmtD(b.datum):'';
+  document.getElementById('artikel-titel').textContent=b.headline||'';
+  document.getElementById('artikel-teaser').textContent=b.teaser||'';
+  const body=document.getElementById('artikel-body');
+  body.innerHTML=b.spielbericht&&b.spielbericht.includes('<')?b.spielbericht:b.spielbericht?b.spielbericht.split('\n\n').map(p=>`<p style="margin-bottom:1em">${esc(p)}</p>`).join(''):'';
+  const ytM=b.video_url&&b.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if(ytM)body.innerHTML+=`<div style="margin-top:24px;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${ytM[1]}" frameborder="0" allowfullscreen style="display:block;"></iframe></div>`;
+  document.getElementById('artikel-modal').style.display='block';
+  document.body.style.overflow='hidden';
+}
+
+function schliesseArtikel(e){
+  if(e&&e.type==='click'&&e.target!==document.getElementById('artikel-modal'))return;
+  document.getElementById('artikel-modal').style.display='none';
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')schliesseArtikel();});
+
+function renderSponsors(sponsors,br,sp){
+  // Alle Partner normalisieren – unterstützt alle Feldnamen
+  function normPartner(s){
+    return {
+      name:     s.Partner_Name||s.Sponsor_Name||s.name||s.Banner_Text||'',
+      desc:     s.Beschreibung||s.desc||s.description||'',
+      logo:     s.Logo_URL||s.logo||'',
+      website:  s.Website||s.website||s.URL||'',
+      facebook: s.Facebook||s.facebook||'',
+      instagram:s.Instagram||s.instagram||'',
+      youtube:  s.YouTube||s.youtube||'',
+      tiktok:   s.TikTok||s.tiktok||'',
+      linkedin: s.LinkedIn||s.linkedin||'',
+      x:        s.X||s.x||s.Twitter||'',
+      level:    (s.Sponsor_Level||s.level||'').toLowerCase(),
+      position: Number(s.Position||s.position)||999,
+      aktiv:    String(s.Aktiv||s.aktiv||'Ja').trim(),
+      kategorie:s.Kategorie||s.kategorie||'',
+    };
+  }
+
+  function spSocIcons(p, size='premium'){
+    const icons=[
+      [p.facebook,'📘','Facebook'],[p.instagram,'📸','Instagram'],
+      [p.youtube,'▶️','YouTube'],[p.tiktok,'🎵','TikTok'],
+      [p.linkedin,'💼','LinkedIn'],[p.x,'✖','X'],
+    ];
+    const cls = size==='premium' ? 'sp-premium-soc' : 'sp-card-soc';
+    const links=icons.filter(([url])=>url).map(([url,icon,title])=>
+      `<a href="${esc(url)}" target="_blank" rel="noopener" title="${title}">${icon}</a>`
+    ).join('');
+    return links ? `<div class="${cls}">${links}</div>` : '';
+  }
+
+  // Alle normalisieren + filtern (nur Aktiv=Ja) + sortieren
+  const alle = [...sponsors.map(normPartner)];
+  if(sp&&(sp.name||sp.logo)) alle.unshift({...normPartner(sp), position:1, level:'premium'});
+  const aktiv = alle.filter(p=>p.aktiv!=='Nein'&&(p.name||p.logo))
+                    .sort((a,b)=>a.position-b.position);
+
+  if(!aktiv.length){ document.getElementById('sponsoren').style.display='none'; return; }
+
+  // Premium (position=1 oder level=premium)
+  const prem = aktiv.find(p=>p.position===1||p.level==='premium');
+  const rest = aktiv.filter(p=>p!==prem);
+
+  // Premium rendern
+  const premWrap = document.getElementById('sp-premium-wrap');
+  if(premWrap && prem){
+    premWrap.innerHTML=`
+      <div class="sp-premium">
+        <div class="sp-premium-badge">Premium-Partner</div>
+        ${prem.logo
+          ? `<img class="sp-premium-logo" src="${esc(prem.logo)}" alt="${esc(prem.name)}" onerror="this.outerHTML='<div class=sp-premium-logo-ph>🤝</div>'">`
+          : `<div class="sp-premium-logo-ph">🤝</div>`}
+        <div class="sp-premium-body">
+          <div class="sp-premium-lbl">Premium-Partner</div>
+          ${prem.name?`<div class="sp-premium-name">${esc(prem.name)}</div>`:''}
+          ${prem.desc?`<div class="sp-premium-desc">${esc(prem.desc)}</div>`:''}
+          <div class="sp-premium-actions">
+            ${prem.website?`<a class="sp-premium-btn" href="${esc(prem.website)}" target="_blank" rel="noopener">Mehr erfahren →</a>`:''}
+            ${spSocIcons(prem,'premium')}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Weitere Partner rendern
+  const grid = document.getElementById('sp-grid');
+  if(grid && rest.length){
+    const badgeMap={gold:'gold',silber:'silber',bronze:'bronze'};
+    grid.innerHTML = rest.map(p=>{
+      const badge = badgeMap[p.level]||'';
+      return`<div class="sp-card">
+        ${badge?`<div class="sp-card-badge ${badge}">${badge.toUpperCase()}</div>`:''}
+        ${p.logo
+          ? `<img class="sp-card-logo" src="${esc(p.logo)}" alt="${esc(p.name)}" onerror="this.outerHTML='<div class=sp-card-logo-ph>🤝</div>'">`
+          : `<div class="sp-card-logo-ph">🤝</div>`}
+        ${p.name?`<div class="sp-card-name">${esc(p.name)}</div>`:''}
+        ${p.desc?`<div class="sp-card-desc">${esc(p.desc)}</div>`:''}
+        <div class="sp-card-footer">
+          ${p.website?`<a class="sp-card-btn" href="${esc(p.website)}" target="_blank" rel="noopener">Website →</a>`:'<span></span>'}
+          ${spSocIcons(p,'card')}
+        </div>
+      </div>`;
+    }).join('');
+  } else if(grid){
+    grid.style.display='none';
+  }
+}
+
+function renderKontakt(br){
+  const web=br.WEB_URL||br.Website||'';
+  const fb=br.Facebook_URL||'';
+  const ig=br.Instragram_URL||br.Instagram_URL||'';
+  const yt=br.Youtube_URL||'';
+  const tk=br.TikTok_URL||'';
+  const wa=br.WhatsApp_URL||'';
+  const app=br.Public_URL||'';
+  const email=br.Email||'';
+  const tel=br.Telefon||'';
+
+  const soc=[];
+  if(fb) soc.push(`<a class="ko-soc-a" href="${esc(fb)}" target="_blank" rel="noopener" title="Facebook">📘</a>`);
+  if(ig) soc.push(`<a class="ko-soc-a" href="${esc(ig)}" target="_blank" rel="noopener" title="Instagram">📸</a>`);
+  if(yt) soc.push(`<a class="ko-soc-a" href="${esc(yt)}" target="_blank" rel="noopener" title="YouTube">▶️</a>`);
+  if(tk) soc.push(`<a class="ko-soc-a" href="${esc(tk)}" target="_blank" rel="noopener" title="TikTok">🎵</a>`);
+  if(wa) soc.push(`<a class="ko-soc-a" href="${esc(wa)}" target="_blank" rel="noopener" title="WhatsApp">💬</a>`);
+
+  const grid = document.getElementById('ko-grid');
+  if(!grid) return;
+  grid.innerHTML = `
+    <div class="ko-card">
+      <div class="ko-card-icon">🌐</div>
+      <div class="ko-card-title">Website</div>
+      <div class="ko-card-content">
+        ${web?`<a href="${esc(web)}" target="_blank" rel="noopener">${esc(web.replace(/https?:\/\//,''))}</a>`:'–'}
+        ${email?`<br><a href="mailto:${esc(email)}">${esc(email)}</a>`:''}
+        ${tel?`<br><a href="tel:${esc(tel)}">${esc(tel)}</a>`:''}
+      </div>
+    </div>
+    <div class="ko-card">
+      <div class="ko-card-icon">📱</div>
+      <div class="ko-card-title">Social Media</div>
+      <div class="ko-card-content">
+        ${soc.length?'':'Noch keine Social-Media-Profile hinterlegt.'}
+      </div>
+      ${soc.length?`<div class="ko-soc-row">${soc.join('')}</div>`:''}
+    </div>
+    <div class="ko-card">
+      <div class="ko-card-icon">📲</div>
+      <div class="ko-card-title">Vereins-App</div>
+      <div class="ko-card-content">
+        Alle Inhalte direkt auf deinem Smartphone – immer aktuell.
+      </div>
+      ${app?`<div style="margin-top:16px;"><a href="${esc(app)}" target="_blank" rel="noopener" class="app-direct-btn" style="font-size:12px;padding:10px 18px;">Zur App →</a></div>`:''}
+    </div>`;
+}
+
+function renderApp(br){
+  const u=br.Public_URL||'#';
+  const ios=br.iOS_URL||'';
+  const gp=br.Android_URL||'';
+  const n=br.Verein_Name||br.vereinsname||'';
+
+  // Links setzen
+  const directBtn=document.getElementById('app-direct');
+  if(directBtn) directBtn.href=u;
+  const hdrApp=document.getElementById('hdr-app');
+  if(hdrApp) hdrApp.href=u;
+
+  // Store-Buttons
+  if(ios){const b=document.getElementById('app-ios');if(b){b.href=ios;b.style.display='flex';}}
+  if(gp){const b=document.getElementById('app-gp');if(b){b.href=gp;b.style.display='flex';}}
+
+  // Mockup-Logo und Name aktualisieren
+  const ml=document.getElementById('app-mockup-logo');
+  if(ml&&n) ml.textContent=n.substring(0,2).toUpperCase();
+  const mn=document.getElementById('app-mockup-name');
+  if(mn&&n) mn.textContent=n+'-App';
+
+  // App-Headline und -Beschreibung
+  const ah=document.getElementById('app-title');
+  if(ah&&n) ah.innerHTML='Die offizielle<br><span>'+esc(n)+'-App</span>';
+  const as=document.getElementById('app-sub');
+  if(as&&n) as.textContent='Alle News, Ergebnisse und Spielpläne von '+n+' – immer dabei.';
+
+  // Footer: Jahr + Vereinsname
+  const fy=document.getElementById('ftr-year');
+  if(fy) fy.textContent=new Date().getFullYear();
+  const fc=document.getElementById('ftr-copy');
+  if(fc&&n) fc.innerHTML='© '+new Date().getFullYear()+' '+esc(n)+' – Alle Rechte vorbehalten';
+
+  // QR-Code aus Branding (überschreibt eingebetteten QR)
+  const qrUrl = br.QR_URL||br.qr_url||'';
+  if(qrUrl){
+    const qrImg=document.getElementById('app-qr-img');
+    if(qrImg) qrImg.src=esc(qrUrl);
+  }
+
+  // Footer Logo
+  const logo=br.Logo_Verein||'';
+  const flph=document.getElementById('ftr-logo-ph');
+  if(flph&&logo){
+    flph.outerHTML=`<img class="ftr-logo" id="ftr-logo" src="${esc(logo)}" alt="${esc(n)}" onerror="this.outerHTML='<div class=ftr-logo-ph id=ftr-logo-ph>'+${JSON.stringify(n.substring(0,2).toUpperCase())}+'</div>'">`;
+  } else if(flph&&n){
+    flph.textContent=n.substring(0,2).toUpperCase();
+  }
+}
+
+function initNav(){
+  const ids=['news','teams','veranstaltungen','tv','sponsoren','kontakt','app'];
+  const links=[...document.querySelectorAll('.hdr-nav .nav-a')];
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){const id=e.target.id;links.forEach(l=>{const h=l.getAttribute('href').replace('#','');l.classList.toggle('on',h===id||(h===''&&id==='news'));});}});
+  },{threshold:0.3});
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)obs.observe(el);});
+}
+
+function toggleNav(){document.getElementById('mob-nav').classList.toggle('open');}
+
+init();
+</script>
+</body>
+</html>
