@@ -626,6 +626,7 @@ img{display:block;max-width:100%;}
       <a class="nav-a on" href="#start">Startseite</a>
       <a class="nav-a" href="#aktuelles">Aktuelles</a>
       <a class="nav-a" href="#spielbetrieb">Spielbetrieb</a>
+      <a class="nav-a" href="#bbk-tv">BBK-TV</a>
       <a class="nav-a" href="#mitgliedsvereine">Mitgliedsvereine</a>
       <a class="nav-a" href="#veranstaltungen">Veranstaltungen</a>
       <a class="nav-a" href="#downloads">Downloads</a>
@@ -843,6 +844,7 @@ function bbkSpringeZuKarte_(gridId, name){
   <a class="nav-a" href="#start" onclick="toggleNav()">Startseite</a>
   <a class="nav-a" href="#aktuelles" onclick="toggleNav()">Aktuelles</a>
   <a class="nav-a" href="#spielbetrieb" onclick="toggleNav()">Spielbetrieb</a>
+  <a class="nav-a" href="#bbk-tv" onclick="toggleNav()">BBK-TV</a>
   <a class="nav-a" href="#mitgliedsvereine" onclick="toggleNav()">Mitgliedsvereine</a>
   <a class="nav-a" href="#veranstaltungen" onclick="toggleNav()">Veranstaltungen</a>
   <a class="nav-a" href="#downloads" onclick="toggleNav()">Downloads</a>
@@ -1171,26 +1173,21 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="teams-row" id="teams-row"></div>
 </div></section>
 
-<!-- 7. TV -->
-<section class="sec tv-sec" id="tv"><div class="wrap">
-  <div class="tv-hdr">
-    <div class="tv-brand">
-      <div class="tv-icon">▶</div>
-      <div class="tv-name" id="tv-name">Vereins<span>-TV</span></div>
-    </div>
+<!-- 7. BBK-TV (eingebettet, Quelle: bbk-tv.netlify.app – unverändert) -->
+<section class="sec" id="bbk-tv" style="border-top:1px solid var(--border);"><div class="wrap">
+  <div class="sec-head">
+    <div class="sec-title">BBK-TV</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px;">Highlights, Interviews und Videos des Basketballkreises</div>
   </div>
-  <div class="tv-layout" id="tv-layout">
-    <div class="tv-main">
-      <div class="tv-player" id="tv-player">
-        <div class="tv-player-nopic">▶</div>
-      </div>
-      <div class="tv-main-info" id="tv-main-info"></div>
-      <div class="tv-thumbs" id="tv-thumbs"></div>
-    </div>
-    <div class="tv-playlist">
-      <div class="tv-playlist-head">► Alle Videos</div>
-      <div class="tv-playlist-list" id="tv-playlist-list"></div>
-    </div>
+  <div style="position:relative;padding-top:56.25%;border-radius:var(--rx);overflow:hidden;box-shadow:var(--card-shadow);background:#000;">
+    <iframe
+      src="https://bbk-tv.netlify.app"
+      style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+      allow="autoplay; fullscreen"
+      allowfullscreen
+      loading="lazy"
+      title="BBK Vereins-TV">
+    </iframe>
   </div>
 </div></section>
 
@@ -1643,7 +1640,6 @@ async function init(){
     }
     renderTeams(teams,br);
     renderEvs(evs);
-    renderTV(videos,br);
     renderSponsors(sponsors,br,sponsor);
     renderKontakt(br);
     renderApp(br);
@@ -1690,7 +1686,6 @@ function applyBranding(br){
   document.getElementById('hdr-name').textContent=n;
   document.title=n+' – SportMagazin';
   document.getElementById('ftr-name').textContent=n;
-  document.getElementById('tv-name').innerHTML=esc(n.split(' ')[0])+'<span>-TV</span>';
   document.getElementById('app-title').innerHTML='Die offizielle<br>'+esc(n)+'-App';
   document.getElementById('app-sub').textContent='Alle News, Ergebnisse und Spielpläne von '+n+' direkt aufs Handy.';
 
