@@ -1828,14 +1828,15 @@ function renderNewsV1(beitraege, br){
     const kat  = b.beitragsart || b.kategorie || 'News';
     const datum= fmtD(b.datum);
     const vid  = b.video_url && ytId(b.video_url);
+   const istGrafik = b.bild_typ==='grafik'||b.bild_typ==='logo';
     const imgSrc = b.bild_url
-      ? optimiereBildUrl(b.bild_url,'thumbnail')
+      ? (istGrafik ? b.bild_url : optimiereBildUrl(b.bild_url,'thumbnail'))
       : '';
     return `
       <div class="nv-card" onclick="zeigeArtikel('${esc(b.spiel_id)}')">
         <div class="nv-img-wrap">
           ${imgSrc
-            ? `<img class="nv-img" src="${esc(imgSrc)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=nv-ph>🏀</div>'">`
+            ? `<img class="nv-img" src="${esc(imgSrc)}" alt="" loading="lazy" style="${istGrafik?'object-fit:contain;background:var(--bg);':''}" onerror="this.parentElement.innerHTML='<div class=nv-ph>🏀</div>'">`
             : `<div class="nv-ph">🏀</div>`}
           ${vid ? `<div class="nv-vid-badge">▶ Video</div>` : ''}
         </div>
