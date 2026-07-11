@@ -1027,16 +1027,65 @@ function bbkLigaWaehlen(ligaCode){
   document.getElementById('bbk-aktive-mannschaft').textContent = liga.ligaName + ' (kreisweit)';
   document.getElementById('bbk-sportdaten-block').scrollIntoView({behavior:'smooth', block:'nearest'});
 
-  // Phase 1 (Demo): TeamSL_URL in neuem Tab öffnen, sofern vorhanden.
-  const url = bbkLigaTeamSlUrl_(liga);
-  if(url){
-    window.open(url, '_blank', 'noopener');
-  } else {
-    ['bbk-sb-tabelle','bbk-sb-ergebnisse','bbk-sb-spielplan'].forEach(panelId => {
-      const wrap = document.querySelector('#' + panelId + ' .sb-tabelle-wrap');
-      if(wrap) wrap.innerHTML = '<div class="sb-hint">Die Tabelle wird in Kürze einsehbar.</div>';
-    });
+  bbkLadeLigaSportdaten(ligaCode);
+}
+
+// ── Sportdaten für "Nach Liga": eingebettet, neutral, ohne Hervorhebung ──
+async function bbkLadeLigaSportdaten(ligaCode){
+  bbkLadeLigaPanel_('bbk-sb-tabelle',    'getBbkLigaTabelle',    'tabelle',    ligaCode, (wrap, rows) => bbkRenderLigaTabelle_(wrap, rows));
+  bbkLadeLigaPanel_('bbk-sb-ergebnisse', 'getBbkLigaErgebnisse', 'ergebnisse', ligaCode, (wrap, rows) => bbkRenderLigaSpiele_(wrap, rows, true));
+  bbkLadeLigaPanel_('bbk-sb-spielplan',  'getBbkLigaSpielplan',  'spielplan',  ligaCode, (wrap, rows) => bbkRenderLigaSpiele_(wrap, rows, false));
+}
+
+async function bbkLadeLigaPanel_(panelId, action, feldName, ligaCode, renderFn){
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+  const wrap = panel.querySelector('.sb-tabelle-wrap') || panel;
+  wrap.innerHTML = '<div class="sb-hint">Lade Daten…</div>';
+
+  try {
+    const url = GAS + '?action=' + action + '&ligaCode=' + encodeURIComponent(ligaCode);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const liste = data && data[feldName];
+
+    if(!data || !data.success || !liste || !liste.length || data.status === 'KEINE_DATEN'){
+      wrap.innerHTML = '<div class="sb-hint">Die Tabelle wird in Kürze einsehbar.</div>';
+      return;
+    }
+    renderFn(wrap, liste);
+  } catch(err){
+    wrap.innerHTML = '<div class="sb-hint">Die Tabelle wird in Kürze einsehbar.</div>';
+    console.warn('bbkLadeLigaPanel_ Fehler (' + action + '):', err);
   }
+}
+
+function bbkRenderLigaTabelle_(wrap, rows){
+  const zeilen = rows.map((r,i) => {
+    const teamName = fixU(r.Team_Name);
+    return `<tr><td class="sd-rang">${esc(r.Rang||i+1)}</td><td class="sd-teamname">${esc(teamName)}</td><td class="r">${esc(r.Spiele||'')}</td><td class="r">${esc(r.Siege||'')}</td><td class="r">${esc(r.Niederlagen||'')}</td><td class="r">${esc(r.Punkte||'')}</td></tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<table class="sd-table">
+      <thead><tr><th class="sd-rang">#</th><th>Team</th><th class="r">Sp.</th><th class="r">S</th><th class="r">N</th><th class="r">Pkt.</th></tr></thead>
+      <tbody>${zeilen}</tbody>
+    </table>`;
+}
+
+function bbkRenderLigaSpiele_(wrap, rows, mitErgebnis){
+  if(!rows.length){
+    wrap.innerHTML = '<div class="sb-hint">Die Tabelle wird in Kürze einsehbar.</div>';
+    return;
+  }
+  const cards = rows.map(r => `<div class="erg-card">
+      <div class="erg-date"><span class="erg-date-day">${esc(r.Datum)}</span></div>
+      <div class="erg-teams">
+        <div class="erg-team">${esc(fixU(r.Heim))}</div>
+        <div class="erg-team">${esc(fixU(r.Gast))}</div>
+      </div>
+      ${mitErgebnis ? `<div class="erg-score">${esc(r.Ergebnis || '–:–')}</div>` : ''}
+    </div>`).join('');
+  wrap.innerHTML = `<div class="erg-grid">${cards}</div>`;
 }
 // --- Moduswahl: Nach Liga / Nach Verein ---
 function bbkModusWaehlen(modus, btn){
@@ -1111,9 +1160,18 @@ async function bbkLadePanelSb_(panelId, action, feldName, vereinName, mannschaft
 // (Wortabgleich Vereinsname ↔ Teamname, wie beim Vereins-eigenen
 // Spielbetrieb — basketball-bund.net führt Gierath z.B. als "SG RW
 // Gierath", daher genügt ein Wortabgleich ohne zusätzliche Alias-Liste)
+// Reine Ortsnamen kommen in vielen BBK-Vereinsnamen vor (z.B. "…Düsseldorf…")
+// und taugen deshalb allein NICHT als Erkennungsmerkmal — sonst würden bei
+// einer Suche wie "SG ART Giants Düsseldorf" alle Düsseldorfer Teams
+// gleichzeitig als "eigenes Team" markiert. Nur ausschließen, wenn danach
+// noch mindestens ein spezifischeres Wort übrig bleibt.
+const BBK_ORT_WOERTER_ = ['düsseldorf','neuss','jüchen','kaarst','grevenbroich','meerbusch','ratingen','mettmann','monheim','langenfeld','büttgen','norf','dormagen','kaiserswerth'];
+
 function bbkIstEigenesTeamSb_(teamName, vereinName){
   const tn = fixU(teamName || '').toLowerCase();
-  const woerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
+  const alleWoerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
+  const spezifisch = alleWoerter.filter(w => !BBK_ORT_WOERTER_.includes(w.toLowerCase()));
+  const woerter = spezifisch.length > 0 ? spezifisch : alleWoerter;
   return woerter.some(w => tn.includes(w.toLowerCase()));
 }
 
