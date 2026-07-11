@@ -986,23 +986,58 @@ function bbkMannschaftWaehlen(vereinName, mannschaftName){
 }
 
 // --- MODUS A: NACH LIGA — alle Kreisligen direkt, ohne Vereinsbezug ---
-const BBK_LIGEN = ['U10','U12','U14','U16','U18','Senioren','Finalrunden'];
+// Datenquelle: Sheet BBK_Ligen (über getBbkLigen). Kein festes JS-Array mehr —
+// neue Liga im Sheet ergänzen/aktivieren → erscheint automatisch ohne Deploy.
+let _bbkLigenDaten = [];
 
-function bbkRenderLigaGrid(){
+async function bbkRenderLigaGrid(){
   const grid = document.getElementById('bbk-liga-grid');
-  grid.innerHTML = BBK_LIGEN.map(l => `
-    <button type="button" class="mv-card" style="cursor:pointer;" onclick="bbkLigaWaehlen('${l}')">
-      <div class="mv-card-logo">🏆</div>
-      <div class="mv-card-name">Kreisliga ${l}</div>
-    </button>`).join('');
+  grid.innerHTML = '<div class="sb-hint">Lade Ligen…</div>';
+  try {
+    const resp = await fetch(GAS + '?action=getBbkLigen');
+    const data = await resp.json();
+    if(!data || !data.success || !data.ligen || !data.ligen.length){
+      grid.innerHTML = '<div class="sb-hint">Daten für die neue Saison werden ab August ergänzt.</div>';
+      return;
+    }
+    _bbkLigenDaten = data.ligen;
+    grid.innerHTML = _bbkLigenDaten.map(l => `
+      <button type="button" class="mv-card" style="cursor:pointer;" onclick="bbkLigaWaehlen('${esc(l.ligaCode)}')">
+        <div class="mv-card-logo">🏆</div>
+        <div class="mv-card-name">${esc(l.ligaName)}</div>
+      </button>`).join('');
+  } catch(err){
+    grid.innerHTML = '<div class="sb-hint">Daten für die neue Saison werden ab August ergänzt.</div>';
+    console.warn('bbkRenderLigaGrid Fehler:', err);
+  }
 }
 
-function bbkLigaWaehlen(liga){
+// Baut die TeamSL-URL: bevorzugt TeamSL_URL, sonst aus TeamSL_ID, sonst leer
+function bbkLigaTeamSlUrl_(liga){
+  if(liga.teamSlUrl && liga.teamSlUrl.trim()) return liga.teamSlUrl.trim();
+  if(liga.teamSlId && liga.teamSlId.trim()) return 'https://www.basketball-bund.net/index.jsp?Action=102&liga_id=' + encodeURIComponent(liga.teamSlId.trim());
+  return '';
+}
+
+function bbkLigaWaehlen(ligaCode){
+  const liga = _bbkLigenDaten.find(l => l.ligaCode === ligaCode);
+  if(!liga) return;
+
   document.getElementById('bbk-sportdaten-block').style.display = 'block';
-  document.getElementById('bbk-aktive-mannschaft').textContent = 'Kreisliga ' + liga + ' (kreisweit)';
+  document.getElementById('bbk-aktive-mannschaft').textContent = liga.ligaName + ' (kreisweit)';
   document.getElementById('bbk-sportdaten-block').scrollIntoView({behavior:'smooth', block:'nearest'});
-}
 
+  // Phase 1 (Demo): TeamSL_URL in neuem Tab öffnen, sofern vorhanden.
+  const url = bbkLigaTeamSlUrl_(liga);
+  if(url){
+    window.open(url, '_blank', 'noopener');
+  } else {
+    ['bbk-sb-tabelle','bbk-sb-ergebnisse','bbk-sb-spielplan'].forEach(panelId => {
+      const wrap = document.querySelector('#' + panelId + ' .sb-tabelle-wrap');
+      if(wrap) wrap.innerHTML = '<div class="sb-hint">Die Tabelle wird in Kürze einsehbar.</div>';
+    });
+  }
+}
 // --- Moduswahl: Nach Liga / Nach Verein ---
 function bbkModusWaehlen(modus, btn){
   document.querySelectorAll('#bbk-modus-btn-liga, #bbk-modus-btn-verein').forEach(b=>b.classList.remove('on'));
