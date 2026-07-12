@@ -1171,8 +1171,12 @@ function bbkIstEigenesTeamSb_(teamName, vereinName){
   const tn = fixU(teamName || '').toLowerCase();
   const alleWoerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
   const spezifisch = alleWoerter.filter(w => !BBK_ORT_WOERTER_.includes(w.toLowerCase()));
-  const woerter = spezifisch.length > 0 ? spezifisch : alleWoerter;
-  return woerter.some(w => tn.includes(w.toLowerCase()));
+  // Bleibt nach Abzug der Ortsnamen NICHTS Spezifisches übrig (z.B. Vereinsname
+  // besteht nur aus Kürzel + Ort wie "TG Düsseldorf"), dann NICHT auf den
+  // Ortsnamen zurückfallen — sonst genau der alte Bug. Lieber keine
+  // Hervorhebung als eine falsche.
+  if(spezifisch.length === 0) return false;
+  return spezifisch.some(w => tn.includes(w.toLowerCase()));
 }
 
 // ── Tabelle rendern ────────────────────────────────────────
