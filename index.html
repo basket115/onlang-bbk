@@ -1167,16 +1167,24 @@ async function bbkLadePanelSb_(panelId, action, feldName, vereinName, mannschaft
 // noch mindestens ein spezifischeres Wort übrig bleibt.
 const BBK_ORT_WOERTER_ = ['düsseldorf','neuss','jüchen','kaarst','grevenbroich','meerbusch','ratingen','mettmann','monheim','langenfeld','büttgen','norf','dormagen','kaiserswerth'];
 
+// STRIKT — nur fürs Hervorheben in der Tabelle. Bei Mehrdeutigkeit (z.B.
+// "TG Düsseldorf" ohne unterscheidbares Wort) lieber KEINE Hervorhebung
+// als eine falsche.
 function bbkIstEigenesTeamSb_(teamName, vereinName){
   const tn = fixU(teamName || '').toLowerCase();
   const alleWoerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
   const spezifisch = alleWoerter.filter(w => !BBK_ORT_WOERTER_.includes(w.toLowerCase()));
-  // Bleibt nach Abzug der Ortsnamen NICHTS Spezifisches übrig (z.B. Vereinsname
-  // besteht nur aus Kürzel + Ort wie "TG Düsseldorf"), dann NICHT auf den
-  // Ortsnamen zurückfallen — sonst genau der alte Bug. Lieber keine
-  // Hervorhebung als eine falsche.
   if(spezifisch.length === 0) return false;
   return spezifisch.some(w => tn.includes(w.toLowerCase()));
+}
+
+// LOCKER — fürs Filtern von Ergebnissen/Spielplan. Hier ist es umgekehrt:
+// lieber zu viele Spiele zeigen (inkl. anderer TG-Düsseldorf-Mannschaften)
+// als gar keine. Fällt bewusst auf Ortsnamen zurück, wenn nötig.
+function bbkIstVereinsteamSb_(teamName, vereinName){
+  const tn = fixU(teamName || '').toLowerCase();
+  const alleWoerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
+  return alleWoerter.some(w => tn.includes(w.toLowerCase()));
 }
 
 // ── Tabelle rendern ────────────────────────────────────────
@@ -1200,7 +1208,7 @@ function bbkRenderSbErgebnisse_(wrap, rows, vereinName){
   const eigene = rows.filter(r => {
     const heim = fixU(r.Heim);
     const gast = fixU(r.Gast);
-    return bbkIstEigenesTeamSb_(heim, vereinName) || bbkIstEigenesTeamSb_(gast, vereinName);
+    return bbkIstVereinsteamSb_(heim, vereinName) || bbkIstVereinsteamSb_(gast, vereinName);
   });
 
   if(!eigene.length){
@@ -1232,7 +1240,7 @@ function bbkRenderSbSpielplan_(wrap, rows, vereinName){
   const eigene = rows.filter(r => {
     const heim = fixU(r.Heim);
     const gast = fixU(r.Gast);
-    return bbkIstEigenesTeamSb_(heim, vereinName) || bbkIstEigenesTeamSb_(gast, vereinName);
+    return bbkIstVereinsteamSb_(heim, vereinName) || bbkIstVereinsteamSb_(gast, vereinName);
   });
 
   if(!eigene.length){
