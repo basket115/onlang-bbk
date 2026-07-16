@@ -1601,7 +1601,13 @@ const GAS = 'https://script.google.com/macros/s/AKfycbyUP8wHkErf7a20HJemThwY4Vq0
 window.BBK_APP_URL = 'https://bbk-duesseldorf-neuss.netlify.app/?kunde=V007';
 const EV_ARTEN = ['camp','turnier','jahreshauptversammlung','vereinsfest','probetraining','trainerfortbildung','veranstaltung','event','fest','feier','hauptversammlung'];
 
-function kid(){return(new URLSearchParams(window.location.search).get('kunde')||new URLSearchParams(window.location.search).get('kundenId')||'').toUpperCase();}
+function kid(){
+  return (
+    new URLSearchParams(window.location.search).get('kunde') ||
+    new URLSearchParams(window.location.search).get('kundenId') ||
+    'V006'
+  ).toUpperCase();
+}
 const KUNDE=kid();
 
 // ── Globale Hilfsfunktionen ──────────────────────────────
@@ -1670,9 +1676,35 @@ function normBeitrag(b){return{
 
 // Website zeigt nur Beiträge die freigegeben UND für Website veröffentlicht wurden
 function nurFreigegeben(b){
-  const freigegeben = b.status==='Freigegeben';
-  const websiteAktiv = b.website_status==='Ja' || b.Website_Status==='Ja';
-  const richtigerKunde = String(b.kunden_id||'').trim().toUpperCase()===String(KUNDE||'').trim().toUpperCase();
+  const status = String(
+    b.status ||
+    b.verein_status ||
+    b.Verein_Status ||
+    ''
+  ).trim().toLowerCase();
+
+  const websiteStatus = String(
+    b.website_status ||
+    b.Website_Status ||
+    ''
+  ).trim().toLowerCase();
+
+  const freigegeben =
+    status === 'freigegeben' ||
+    status === 'veröffentlicht';
+
+  const websiteAktiv =
+    websiteStatus === 'ja' ||
+    websiteStatus === 'veröffentlicht';
+
+  const richtigerKunde =
+    String(
+      b.kunden_id ||
+      b.Kunden_ID ||
+      ''
+    ).trim().toUpperCase() ===
+    String(KUNDE || '').trim().toUpperCase();
+
   return freigegeben && websiteAktiv && richtigerKunde;
 }
 function isEv(b){return EV_ARTEN.some(v=>String(b.beitragsart||b.kategorie||'').toLowerCase().includes(v));}
@@ -1705,7 +1737,24 @@ async function init(){
     const teams=tR.teams||[];
     const sponsors=sR.sponsors||[];
     _vereinsName=br.Verein_Name||br.vereinsname||'';
-    _alle=(stR.beitraege||[]).map(normBeitrag).filter(nurFreigegeben);
+    _alle = (stR.beitraege || [])
+  .map(normBeitrag)
+  .filter(nurFreigegeben)
+  .sort(function(a, b) {
+    return String(
+      b.erstellt_am ||
+      b.Erstellt_Am ||
+      b.datum ||
+      ''
+    ).localeCompare(
+      String(
+        a.erstellt_am ||
+        a.Erstellt_Am ||
+        a.datum ||
+        ''
+      )
+    );
+  });
 
     console.log('[T7] nach normBeitrag + Filter:', _alle.length, 'freigegebene Beiträge');
     if(_alle.length>0) console.log('[T7] erster Beitrag:', _alle[0]);
