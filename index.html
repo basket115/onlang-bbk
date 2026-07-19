@@ -1461,32 +1461,94 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(err){ console.warn('bbk5 Allgemein Fehler:', err); }
 
-  // ── Vorstand ──
+    // ── Vorstand aus Tabelle Personen ──
   try {
-    const resp = await fetch(GAS + '?action=getBbkVorstand');
+    const resp = await fetch(
+      GAS + '?action=getPersonen&kundenId=V006&bereich=Vorstand'
+    );
+
     const data = await resp.json();
     const grid = document.getElementById('vorstand-grid');
     const hinweis = document.getElementById('vorstand-hinweis');
-    if(data && data.success && data.vorstand && data.vorstand.length && grid){
-      grid.innerHTML = data.vorstand.map(p => {
+
+    if (
+      data &&
+      data.success &&
+      Array.isArray(data.personen) &&
+      data.personen.length &&
+      grid
+    ) {
+      grid.innerHTML = data.personen.map(p => {
         const name = p.Name || 'Name folgt';
         const funktion = p.Funktion || '';
-        const tel = p.Telefon || '';
-        const email = p.Email || '';
-        return `<div class="mv-card" style="width:210px;">
-          <div class="mv-card-logo">👤</div>
-          <div class="mv-card-name">${esc(name)}</div>
-          <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">${esc(funktion)}</div>
-          <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.5;">
-            ${email ? `<a href="mailto:${esc(email)}" style="color:var(--faint);">${esc(email)}</a><br>` : ''}
-            ${tel ? `<a href="tel:${esc(tel)}" style="color:var(--faint);">${esc(tel)}</a>` : ''}
-          </div>
-        </div>`;
-      }).join('');
-      if(hinweis) hinweis.remove();
-    }
-  } catch(err){ console.warn('bbk5 Vorstand Fehler:', err); }
+        const email = p['E-Mail'] || '';
+        const telefon = p.Telefon || '';
+        const strasse = p['Straße'] || '';
+        const plz = p.PLZ || '';
+        const ort = p.Ort || '';
+        const bildUrl = p.Bild_URL || '';
 
+        const adresseTeile = [];
+
+        if (strasse && strasse !== '-folgt-') {
+          adresseTeile.push(strasse);
+        }
+
+        const plzOrt = [plz, ort]
+          .filter(wert => wert && wert !== '-folgt-')
+          .join(' ');
+
+        if (plzOrt) {
+          adresseTeile.push(plzOrt);
+        }
+
+        const adresse = adresseTeile.join(', ');
+        const telefonLink = telefon.replace(/[^0-9+]/g, '');
+
+        return `
+          <div class="mv-card" style="width:210px;">
+            ${
+              bildUrl
+                ? `<img
+                    src="${esc(bildUrl)}"
+                    alt="${esc(name)}"
+                    style="width:56px;height:56px;border-radius:50%;object-fit:cover;margin:0 auto 12px;"
+                  >`
+                : `<div class="mv-card-logo">👤</div>`
+            }
+
+            <div class="mv-card-name">${esc(name)}</div>
+
+            <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">
+              ${esc(funktion)}
+            </div>
+
+            <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.55;">
+              ${adresse ? `<div>${esc(adresse)}</div>` : ''}
+
+              ${
+                email
+                  ? `<a href="mailto:${esc(email)}" style="color:var(--faint);">${esc(email)}</a><br>`
+                  : ''
+              }
+
+              ${
+                telefon
+                  ? `<a href="tel:${esc(telefonLink)}" style="color:var(--faint);">${esc(telefon)}</a>`
+                  : ''
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (hinweis) {
+        hinweis.remove();
+      }
+    }
+  } catch (err) {
+    console.warn('Personen/Vorstand Fehler:', err);
+  }
   // ── Kontakte ──
   try {
     const resp = await fetch(GAS + '?action=getBbkKontakte');
