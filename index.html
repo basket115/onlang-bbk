@@ -612,6 +612,53 @@ img{display:block;max-width:100%;}
   .hero-teaser{display:none;}
   .app-btns{flex-direction:column;}
 }
+ /* BBK Vorstand – alle Personen direkt sichtbar */
+#vorstand-grid{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  overflow:visible !important;
+  width:100%;
+  align-items:stretch;
+  padding-bottom:0;
+}
+
+#vorstand-grid .mv-card{
+  width:100% !important;
+  min-width:0 !important;
+  height:100%;
+  padding:22px 14px;
+  overflow:hidden;
+}
+
+#vorstand-grid .mv-card-name{
+  overflow-wrap:anywhere;
+}
+
+#vorstand-grid .vorstand-kontakt,
+#vorstand-grid .vorstand-kontakt a{
+  max-width:100%;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+
+@media(max-width:1050px){
+  #vorstand-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+@media(max-width:760px){
+  #vorstand-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:480px){
+  #vorstand-grid{
+    grid-template-columns:1fr;
+  }
+} 
 </style>
 </head>
 <body>
@@ -1387,7 +1434,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div style="font-family:var(--font-headline);font-size:16px;font-weight:600;text-transform:uppercase;margin-bottom:6px;">Vorstand</div>
     <div id="vorstand-hinweis" style="font-size:12px;color:var(--faint);margin-bottom:16px;">Vorläufige Angaben — Pflege über Google Sheet/Studio ist vorbereitet, aber noch nicht angebunden.</div>
     <div class="teams-row" id="vorstand-grid">
-      <div class="mv-card" style="width:210px;">
+      <div class="mv-card">
         <div class="mv-card-logo">👤</div>
         <div class="mv-card-name">Name folgt</div>
         <div style="font-size:11px;color:var(--muted);text-transform:none;margin-bottom:8px;">1. Vorsitzende/r</div>
@@ -1502,11 +1549,11 @@ window.addEventListener('DOMContentLoaded', async () => {
           adresseTeile.push(plzOrt);
         }
 
-        const adresse = adresseTeile.join(', ');
+       const adresse = adresseTeile.join('<br>');
         const telefonLink = telefon.replace(/[^0-9+]/g, '');
 
         return `
-          <div class="mv-card" style="width:210px;">
+          <div class="mv-card">
             ${
               bildUrl
                 ? `<img
@@ -1523,8 +1570,8 @@ window.addEventListener('DOMContentLoaded', async () => {
               ${esc(funktion)}
             </div>
 
-            <div style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.55;">
-              ${adresse ? `<div>${esc(adresse)}</div>` : ''}
+            <div class="vorstand-kontakt" style="font-size:11px;color:var(--faint);text-transform:none;line-height:1.55;">
+              ${adresse ? `<div style="margin-bottom:4px;">${adresse}</div>` : ''}
 
               ${
                 email
