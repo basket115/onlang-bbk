@@ -815,19 +815,34 @@ window.addEventListener('DOMContentLoaded', async () => {
   grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
   return;
 }
-grid.innerHTML = data.vereine.map(v => {
-  const link = v.website || v.web || '';
-  const istLink = link && link.trim();
-  const logoPfad = BBK_VEREIN_LOGOS[v.name];
-  const logoHtml = logoPfad ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">` : '🏀';
-  return `
-    <a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"
-       ${istLink ? 'target="_blank" rel="noopener"' : ''}>
-      <div class="mv-card-logo">${logoHtml}</div>
-      <div class="mv-card-name">${esc(v.name)}</div>
-    </a>
-  `;
-}).join('');
+grid.innerHTML = data.vereine.map(v => `
+  <div class="mv-item">
+    <img src="${BBK_VEREIN_LOGOS[v.name] || 'logos/basketball.svg'}" alt="${v.name}">
+    <h3>${v.name}</h3>
+    <select>
+      ${v.mannschaften.map(m => `<option>${m.name}</option>`).join('')}
+    </select>
+  </div>
+`).join('');
+} catch(err) {
+    console.error('Fehler:', err);
+    grid.innerHTML = '<div class="sb-hint">Fehler beim Laden der Daten.</div>';
+  }
+});
+
+      // Zukünftige Zusatzdaten (Website/App/Social) — solange das Sheet
+      // sie noch nicht liefert, bleibt es beim reinen Namen + Icon.
+      const link = v.website || v.web || '';
+      const istLink = link && link.trim();
+      const logoPfad = BBK_VEREIN_LOGOS[v.name];
+      const logoHtml = logoPfad
+        ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">`
+        : '🏀';
+      return `<a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"${istLink ? ' target="_blank" rel="noopener"' : ''}>
+          <div class="mv-card-logo">${logoHtml}</div>
+          <div class="mv-card-name">${esc(v.name)}</div>
+        </a>`;
+    }).join('');
 
     const mvDd = document.getElementById('mv-verein-dropdown');
     if(mvDd){
@@ -1005,6 +1020,19 @@ async function bbkRenderVereinGrid(){
   }
 }
 
+// Unterstützt beide API-Stände:
+// alt: mannschaften: ["U10/1", ...]
+// neu: mannschaften: [{name:"U10/1", teamSlTeamname:"ART Düsseldorf"}, ...]
+function bbkMannschaftObj_(m){
+  if(m && typeof m === 'object'){
+    return {
+      name: String(m.name || m.Mannschaft_Name || '').trim(),
+      teamSlTeamname: String(m.teamSlTeamname || m.TeamSL_Teamname || '').trim()
+    };
+  }
+  return { name:String(m || '').trim(), teamSlTeamname:'' };
+}
+
 function bbkVereinWaehlen(key){
   const verein = _bbkVereineDaten.find(v => v.key === key);
   if(!verein) return;
@@ -1023,22 +1051,35 @@ function bbkVereinWaehlen(key){
     'Kreisliga-Mannschaften — ' + verein.name;
 
   const grid = document.getElementById('bbk-mannschaft-grid');
-  grid.innerHTML = verein.mannschaften.map(m => `
-    <button
-      type="button"
-      class="mv-card"
-      data-name="${esc(m)}"
-      style="cursor:pointer;"
-      onclick="bbkMannschaftWaehlen('${verein.name.replace(/'/g,"\\'")}','${m.replace(/'/g,"\\'")}', this)">
-      <div class="mv-card-logo">🎽</div>
-      <div class="mv-card-name">${esc(m)}</div>
-    </button>`).join('');
+  const mannschaften = Array.isArray(verein.mannschaften) ? verein.mannschaften : [];
+
+  grid.innerHTML = mannschaften.map(raw => {
+    const m = bbkMannschaftObj_(raw);
+    if(!m.name) return '';
+    const vereinArg = encodeURIComponent(verein.name);
+    const teamArg = encodeURIComponent(m.name);
+    const teamSlArg = encodeURIComponent(m.teamSlTeamname);
+    return `
+      <button
+        type="button"
+        class="mv-card"
+        data-name="${esc(m.name)}"
+        style="cursor:pointer;"
+        onclick="bbkMannschaftWaehlen(decodeURIComponent('${vereinArg}'),decodeURIComponent('${teamArg}'),decodeURIComponent('${teamSlArg}'),this)">
+        <div class="mv-card-logo">🎽</div>
+        <div class="mv-card-name">${esc(m.name)}</div>
+      </button>`;
+  }).join('');
+
+  if(!grid.innerHTML.trim()){
+    grid.innerHTML = '<div class="sb-hint">Für diesen Verein sind derzeit keine Mannschaften hinterlegt.</div>';
+  }
 
   // Sportdaten-Bereich zurücksetzen, bis eine Mannschaft gewählt wird
   document.getElementById('bbk-sportdaten-block').style.display = 'none';
 }
 
-function bbkMannschaftWaehlen(vereinName, mannschaftName, btn){
+function bbkMannschaftWaehlen(vereinName, mannschaftName, teamSlTeamname, btn){
   // gewählte Mannschaft hervorheben
   document.querySelectorAll('#bbk-mannschaft-grid .mv-card').forEach(el => {
     el.classList.toggle('on', el === btn);
@@ -1051,7 +1092,7 @@ function bbkMannschaftWaehlen(vereinName, mannschaftName, btn){
   document.getElementById('bbk-sportdaten-block')
     .scrollIntoView({behavior:'smooth', block:'nearest'});
 
-  bbkLadeSportdaten(vereinName, mannschaftName);
+  bbkLadeSportdaten(vereinName, mannschaftName, teamSlTeamname || '');
 }
 
 // --- MODUS A: NACH LIGA — alle Kreisligen direkt, ohne Vereinsbezug ---
@@ -1212,14 +1253,14 @@ function bbkSbTab(btn, panelId){
 // 1 Datensatz pro Panel geladen.
 // ============================================================
 
-async function bbkLadeSportdaten(vereinName, mannschaftName){
-  bbkLadePanelSb_('bbk-sb-tabelle',    'getBbkTabelle',    'tabelle',    vereinName, mannschaftName, bbkRenderSbTabelle_);
-  bbkLadePanelSb_('bbk-sb-ergebnisse', 'getBbkErgebnisse', 'ergebnisse', vereinName, mannschaftName, bbkRenderSbErgebnisse_);
-  bbkLadePanelSb_('bbk-sb-spielplan',  'getBbkSpielplan',  'spielplan',  vereinName, mannschaftName, bbkRenderSbSpielplan_);
+async function bbkLadeSportdaten(vereinName, mannschaftName, teamSlTeamname){
+  bbkLadePanelSb_('bbk-sb-tabelle',    'getBbkTabelle',    'tabelle',    vereinName, mannschaftName, teamSlTeamname, bbkRenderSbTabelle_);
+  bbkLadePanelSb_('bbk-sb-ergebnisse', 'getBbkErgebnisse', 'ergebnisse', vereinName, mannschaftName, teamSlTeamname, bbkRenderSbErgebnisse_);
+  bbkLadePanelSb_('bbk-sb-spielplan',  'getBbkSpielplan',  'spielplan',  vereinName, mannschaftName, teamSlTeamname, bbkRenderSbSpielplan_);
 }
 
 // ── Gemeinsame Lade-Logik für alle 3 Panels ───────────────
-async function bbkLadePanelSb_(panelId, action, feldName, vereinName, mannschaftName, renderFn){
+async function bbkLadePanelSb_(panelId, action, feldName, vereinName, mannschaftName, teamSlTeamname, renderFn){
   const panel = document.getElementById(panelId);
   if(!panel) return;
   const wrap = panel.querySelector('.sb-tabelle-wrap') || panel;
@@ -1228,7 +1269,8 @@ async function bbkLadePanelSb_(panelId, action, feldName, vereinName, mannschaft
   try {
     const url = GAS + '?action=' + action
       + '&vereinName=' + encodeURIComponent(vereinName)
-      + '&mannschaft=' + encodeURIComponent(mannschaftName);
+      + '&mannschaft=' + encodeURIComponent(mannschaftName)
+      + '&teamSlTeamname=' + encodeURIComponent(teamSlTeamname || '');
     const resp = await fetch(url);
     const data = await resp.json();
     const liste = data && data[feldName];
@@ -1237,27 +1279,26 @@ async function bbkLadePanelSb_(panelId, action, feldName, vereinName, mannschaft
       wrap.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
       return;
     }
-    renderFn(wrap, liste, vereinName);
+    renderFn(wrap, liste, vereinName, teamSlTeamname || '');
   } catch(err){
     wrap.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
     console.warn('bbkLadePanelSb_ Fehler ('+action+'):', err);
   }
 }
 
-// ── Prüft, ob eine Zeile das "eigene" Team des gewählten Vereins ist ──
-// (Wortabgleich Vereinsname ↔ Teamname, wie beim Vereins-eigenen
-// Spielbetrieb — basketball-bund.net führt Gierath z.B. als "SG RW
-// Gierath", daher genügt ein Wortabgleich ohne zusätzliche Alias-Liste)
-// Reine Ortsnamen kommen in vielen BBK-Vereinsnamen vor (z.B. "…Düsseldorf…")
-// und taugen deshalb allein NICHT als Erkennungsmerkmal — sonst würden bei
-// einer Suche wie "SG ART Giants Düsseldorf" alle Düsseldorfer Teams
-// gleichzeitig als "eigenes Team" markiert. Nur ausschließen, wenn danach
-// noch mindestens ein spezifischeres Wort übrig bleibt.
+// ── Teamvergleich im Modus "Nach Verein" ──────────────────
+// Wenn TeamSL_Teamname gepflegt ist: ausschließlich exakter Vergleich nach
+// Umlaut-Fix, trim/lowercase und zusammengefassten Leerzeichen.
+// Wenn leer: unveränderte bisherige Vereinsnamen-Logik als Fallback.
+function bbkNormTeamName_(value){
+  return fixU(String(value || ''))
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
 const BBK_ORT_WOERTER_ = ['düsseldorf','neuss','jüchen','kaarst','grevenbroich','meerbusch','ratingen','mettmann','monheim','langenfeld','büttgen','norf','dormagen','kaiserswerth'];
 
-// STRIKT — nur fürs Hervorheben in der Tabelle. Bei Mehrdeutigkeit (z.B.
-// "TG Düsseldorf" ohne unterscheidbares Wort) lieber KEINE Hervorhebung
-// als eine falsche.
 function bbkIstEigenesTeamSb_(teamName, vereinName){
   const tn = fixU(teamName || '').toLowerCase();
   const alleWoerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
@@ -1266,20 +1307,26 @@ function bbkIstEigenesTeamSb_(teamName, vereinName){
   return spezifisch.some(w => tn.includes(w.toLowerCase()));
 }
 
-// LOCKER — fürs Filtern von Ergebnissen/Spielplan. Hier ist es umgekehrt:
-// lieber zu viele Spiele zeigen (inkl. anderer TG-Düsseldorf-Mannschaften)
-// als gar keine. Fällt bewusst auf Ortsnamen zurück, wenn nötig.
 function bbkIstVereinsteamSb_(teamName, vereinName){
   const tn = fixU(teamName || '').toLowerCase();
   const alleWoerter = String(vereinName || '').split(/\s+/).filter(w => w.length > 3);
   return alleWoerter.some(w => tn.includes(w.toLowerCase()));
 }
 
+function bbkIstAusgewaehltesTeamSb_(teamName, vereinName, teamSlTeamname, streng){
+  if(String(teamSlTeamname || '').trim()){
+    return bbkNormTeamName_(teamName) === bbkNormTeamName_(teamSlTeamname);
+  }
+  return streng
+    ? bbkIstEigenesTeamSb_(teamName, vereinName)
+    : bbkIstVereinsteamSb_(teamName, vereinName);
+}
+
 // ── Tabelle rendern ────────────────────────────────────────
-function bbkRenderSbTabelle_(wrap, rows, vereinName){
+function bbkRenderSbTabelle_(wrap, rows, vereinName, teamSlTeamname){
   const zeilen = rows.map((r,i) => {
     const teamName = fixU(r.Team_Name);
-    const eigen = bbkIstEigenesTeamSb_(teamName, vereinName);
+    const eigen = bbkIstAusgewaehltesTeamSb_(teamName, vereinName, teamSlTeamname, true);
     return `<tr${eigen?' class="eigenes-team"':''}><td class="sd-rang">${esc(r.Rang||i+1)}</td><td class="sd-teamname">${esc(teamName)}${eigen?' ◄':''}</td><td class="r">${esc(r.Spiele||'')}</td><td class="r">${esc(r.Siege||'')}</td><td class="r">${esc(r.Niederlagen||'')}</td><td class="r">${esc(r.Punkte||'')}</td></tr>`;
   }).join('');
 
@@ -1290,13 +1337,12 @@ function bbkRenderSbTabelle_(wrap, rows, vereinName){
 }
 
 // ── Ergebnisse rendern ─────────────────────────────────────
-function bbkRenderSbErgebnisse_(wrap, rows, vereinName){
-  // Nur Spiele zeigen, in denen der gewählte Verein tatsächlich Heim oder
-  // Gast ist — Action=103 liefert sonst die komplette Liga-Ergebnisliste.
+function bbkRenderSbErgebnisse_(wrap, rows, vereinName, teamSlTeamname){
   const eigene = rows.filter(r => {
     const heim = fixU(r.Heim);
     const gast = fixU(r.Gast);
-    return bbkIstVereinsteamSb_(heim, vereinName) || bbkIstVereinsteamSb_(gast, vereinName);
+    return bbkIstAusgewaehltesTeamSb_(heim, vereinName, teamSlTeamname, false)
+      || bbkIstAusgewaehltesTeamSb_(gast, vereinName, teamSlTeamname, false);
   });
 
   if(!eigene.length){
@@ -1307,8 +1353,8 @@ function bbkRenderSbErgebnisse_(wrap, rows, vereinName){
   const cards = eigene.map(r => {
     const heim = fixU(r.Heim);
     const gast = fixU(r.Gast);
-    const heimIstWir = bbkIstEigenesTeamSb_(heim, vereinName);
-    const gastIstWir = bbkIstEigenesTeamSb_(gast, vereinName);
+    const heimIstWir = bbkIstAusgewaehltesTeamSb_(heim, vereinName, teamSlTeamname, true);
+    const gastIstWir = bbkIstAusgewaehltesTeamSb_(gast, vereinName, teamSlTeamname, true);
     return `<div class="erg-card">
       <div class="erg-date"><span class="erg-date-day">${esc(r.Datum)}</span></div>
       <div class="erg-teams">
@@ -1322,13 +1368,12 @@ function bbkRenderSbErgebnisse_(wrap, rows, vereinName){
 }
 
 // ── Spielplan rendern ──────────────────────────────────────
-function bbkRenderSbSpielplan_(wrap, rows, vereinName){
-  // Gleicher Filter wie bei Ergebnisse — Action=101 liefert sonst den
-  // kompletten Liga-Spielplan aller Teams.
+function bbkRenderSbSpielplan_(wrap, rows, vereinName, teamSlTeamname){
   const eigene = rows.filter(r => {
     const heim = fixU(r.Heim);
     const gast = fixU(r.Gast);
-    return bbkIstVereinsteamSb_(heim, vereinName) || bbkIstVereinsteamSb_(gast, vereinName);
+    return bbkIstAusgewaehltesTeamSb_(heim, vereinName, teamSlTeamname, false)
+      || bbkIstAusgewaehltesTeamSb_(gast, vereinName, teamSlTeamname, false);
   });
 
   if(!eigene.length){
@@ -1339,8 +1384,8 @@ function bbkRenderSbSpielplan_(wrap, rows, vereinName){
   const cards = eigene.map(r => {
     const heim = fixU(r.Heim);
     const gast = fixU(r.Gast);
-    const heimIstWir = bbkIstEigenesTeamSb_(heim, vereinName);
-    const gastIstWir = bbkIstEigenesTeamSb_(gast, vereinName);
+    const heimIstWir = bbkIstAusgewaehltesTeamSb_(heim, vereinName, teamSlTeamname, true);
+    const gastIstWir = bbkIstAusgewaehltesTeamSb_(gast, vereinName, teamSlTeamname, true);
     return `<div class="erg-card">
       <div class="erg-date"><span class="erg-date-day">${esc(r.Datum)}</span></div>
       <div class="erg-teams">
