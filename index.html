@@ -815,15 +815,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
   return;
 }
-grid.innerHTML = data.vereine.map(v => `
-  <div class="mv-item">
+grid.innerHTML = data.vereine.map(v =>
+  ` <div class="mv-item">
     <img src="${BBK_VEREIN_LOGOS[v.name] || 'logos/basketball.svg'}" alt="${v.name}">
     <h3>${v.name}</h3>
     <select>
       ${v.mannschaften.map(m => `<option>${m.name}</option>`).join('')}
     </select>
-  </div>
-`).join('');
+  </div> `
+).join('');
 } catch(err) {
     console.error('Fehler:', err);
     grid.innerHTML = '<div class="sb-hint">Fehler beim Laden der Daten.</div>';
