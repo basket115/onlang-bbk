@@ -373,6 +373,27 @@ img{display:block;max-width:100%;}
 /* Mitgliedsvereine / Downloads – nutzt dieselben Design-Tokens wie sp-card */
 .mv-card{flex:0 0 auto;width:150px;background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:20px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;transition:transform 180ms ease,border-color 180ms ease;font-family:inherit;color:inherit;}
 .mv-card:hover{transform:translateY(-4px);border-color:var(--border-2);}
+
+.mv-card{cursor:pointer;text-decoration:none;}
+.mv-card-logo{width:72px;height:72px;border-radius:50%;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden;}
+.mv-card-logo img{width:62px;height:62px;object-fit:contain;}
+.mv-card-name{font-size:13px;line-height:1.25;}
+.mv-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:20px;z-index:9999;}
+.mv-modal-backdrop.on{display:flex;}
+.mv-modal{width:min(680px,96vw);max-height:88vh;overflow:auto;background:var(--card);border:1px solid var(--border-2);border-radius:18px;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.45);position:relative;}
+.mv-modal-close{position:absolute;right:16px;top:14px;border:0;background:transparent;color:#fff;font-size:30px;cursor:pointer;}
+.mv-modal-head{display:flex;gap:20px;align-items:center;margin-bottom:22px;padding-right:40px;}
+.mv-modal-logo{width:110px;height:110px;flex:0 0 110px;border-radius:18px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:46px;overflow:hidden;}
+.mv-modal-logo img{max-width:92px;max-height:92px;object-fit:contain;}
+.mv-modal-title{font-size:26px;font-weight:700;line-height:1.15;margin:0 0 7px;}
+.mv-modal-sub{color:var(--muted);font-size:14px;}
+.mv-modal-section{border-top:1px solid var(--border);padding-top:16px;margin-top:16px;}
+.mv-modal-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:8px;}
+.mv-team-tags{display:flex;flex-wrap:wrap;gap:7px;}
+.mv-team-tag{background:var(--card-2);border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:12px;}
+.mv-modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;}
+.mv-modal-actions a{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:10px;background:var(--primary);color:#fff;text-decoration:none;font-weight:700;}
+
   .mv-card.on{
   border-color:var(--primary);
   box-shadow:0 0 0 2px var(--primary-dim);
@@ -764,6 +785,13 @@ img{display:block;max-width:100%;}
   </div>
 </div></section>
 
+<div class="mv-modal-backdrop" id="mv-modal-backdrop" onclick="if(event.target===this) bbkSchliesseVereinModal_()">
+  <div class="mv-modal" role="dialog" aria-modal="true" aria-labelledby="mv-modal-title">
+    <button class="mv-modal-close" type="button" aria-label="Schließen" onclick="bbkSchliesseVereinModal_()">×</button>
+    <div id="mv-modal-content"></div>
+  </div>
+</div>
+
 <script>
 // ── Generische Such-/Filterfunktion für Vereinskarten-Reihen ──
 // Wird sowohl von Spielbetrieb (bbk-verein-grid) als auch von
@@ -791,27 +819,76 @@ function bbkFilterKarten_(gridId, query){
 // (v.website, v.app, v.social o.ä.) — ohne dass diese Funktion
 // nochmal umgebaut werden muss.
 // ============================================================
+let _bbkMitgliedsvereine = [];
+
+function bbkLogoHtml_(v, gross){
+  const logo = String(v.logoUrl || '').trim();
+  const cls = gross ? 'mv-modal-logo' : 'mv-card-logo';
+  if(!logo) return `<div class="${cls}">🏀</div>`;
+  return `<div class="${cls}"><img src="${esc(logo)}" alt="${esc(v.name)}" onerror="this.parentElement.innerHTML='🏀'"></div>`;
+}
+
+function bbkOeffneVereinModal_(vereinKey){
+  const v = _bbkMitgliedsvereine.find(x => x.key === vereinKey);
+  if(!v) return;
+
+  const teams = Array.isArray(v.mannschaften) ? v.mannschaften : [];
+  const website = String(v.websiteUrl || '').trim();
+  const email = String(v.kontaktEmail || '').trim();
+  const tel = String(v.telefon || '').trim();
+  const fb = String(v.facebookUrl || '').trim();
+  const ig = String(v.instagramUrl || '').trim();
+  const onlang = String(v.onlangUrl || '').trim();
+
+  const content = document.getElementById('mv-modal-content');
+  content.innerHTML = `
+    <div class="mv-modal-head">
+      ${bbkLogoHtml_(v, true)}
+      <div>
+        <h2 class="mv-modal-title" id="mv-modal-title">${esc(v.name)}</h2>
+        <div class="mv-modal-sub">${esc(v.kurzname || '')}${v.ort ? `${v.kurzname ? ' · ' : ''}${esc(v.ort)}` : ''}</div>
+      </div>
+    </div>
+
+    <div class="mv-modal-section">
+      <div class="mv-modal-label">BBK-Spielbetrieb</div>
+      <div style="margin-bottom:10px;color:var(--muted);">${teams.length} Mannschaft${teams.length === 1 ? '' : 'en'} im aktuellen Spielbetrieb</div>
+      <div class="mv-team-tags">
+        ${teams.map(t => `<span class="mv-team-tag">${esc((t && t.name) ? t.name : String(t || ''))}</span>`).join('')}
+      </div>
+    </div>
+
+    ${(website || email || tel || fb || ig || onlang) ? `
+    <div class="mv-modal-section">
+      <div class="mv-modal-label">Vereinsinformationen</div>
+      ${email ? `<div style="margin:5px 0;">✉️ ${esc(email)}</div>` : ''}
+      ${tel ? `<div style="margin:5px 0;">☎️ ${esc(tel)}</div>` : ''}
+      <div class="mv-modal-actions">
+        ${website ? `<a href="${esc(website)}" target="_blank" rel="noopener">🌐 Website öffnen</a>` : ''}
+        ${onlang ? `<a href="${esc(onlang)}" target="_blank" rel="noopener">📱 ONLANG</a>` : ''}
+        ${fb ? `<a href="${esc(fb)}" target="_blank" rel="noopener">Facebook</a>` : ''}
+        ${ig ? `<a href="${esc(ig)}" target="_blank" rel="noopener">Instagram</a>` : ''}
+      </div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('mv-modal-backdrop').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function bbkSchliesseVereinModal_(){
+  const el = document.getElementById('mv-modal-backdrop');
+  if(el) el.classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') bbkSchliesseVereinModal_();
+});
+
 window.addEventListener('DOMContentLoaded', async () => {
   const grid = document.getElementById('mv-grid');
   if(!grid) return;
-
-  const BBK_VEREIN_LOGOS = {
-    'Osterather TV 1893 e. V.': 'logos/Logo-OTV_300326.png',
-    'STV Rethel e.V.': 'logos/Logo-Rethel_300326.png',
-    'Turngemeinde v.1881 Düsseldorf': 'logos/Logo-TG81_300326.png',
-    'DJK TUSA 06 Düsseldorf': 'logos/Logo-TUSA_300326.png',
-    'ART 77/90 Düsseldorf': 'logos/Logo-ART_Düsseldorf_300326.png',
-    'SG ART Giants Düsseldorf': 'logos/Logo-ART_Giants_300326.png',
-    'Capitol Bascats Düsseldorf e.V.': 'logos/Logo-Capitol_300326.png',
-    'TSV Bayer Dormagen e. V.': 'logos/Logo-Dormagen_300326.png',
-    'FSV Jüchen 1984 e.V.': 'logos/Logo-FSV_Jüchen_300326.png',
-    'Greek Baskets Düsseldorf': 'logos/Logo-Greek_300326.png',
-    'ISD Sportverein e. V.': 'logos/Logo-ISD_300326.png',
-    'BG Kaarst-Büttgen': 'logos/Logo-Kaarst-Büttgen_300326.png',
-    'TuS Maccabi Düsseldorf e. V.': 'logos/Logo-Maccabi_300326.png',
-    'BSG Blau-Weiß Grevenbroich': 'logos/Logo-Elephants_300326.png',
-    'SG Rot-Weiß Gierath 48/62 e.V.': 'logos/Logo-Scorpions-Gierath.svg'
-  };
 
   try {
     const resp = await fetch(GAS + '?action=getBbkVereine');
@@ -822,19 +899,14 @@ window.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    grid.innerHTML = data.vereine.map(v => {
-      const link = v.website || v.web || '';
-      const istLink = link && String(link).trim();
-      const logoPfad = BBK_VEREIN_LOGOS[v.name];
-      const logoHtml = logoPfad
-        ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">`
-        : '🏀';
+    _bbkMitgliedsvereine = data.vereine;
 
-      return `<a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"${istLink ? ' target="_blank" rel="noopener"' : ''}>
-          <div class="mv-card-logo">${logoHtml}</div>
-          <div class="mv-card-name">${esc(v.name)}</div>
-        </a>`;
-    }).join('');
+    grid.innerHTML = data.vereine.map(v => `
+      <button type="button" class="mv-card" data-name="${esc(v.name)}" onclick="bbkOeffneVereinModal_('${esc(v.key)}')">
+        ${bbkLogoHtml_(v, false)}
+        <div class="mv-card-name">${esc(v.name)}</div>
+      </button>
+    `).join('');
 
     const mvDd = document.getElementById('mv-verein-dropdown');
     if(mvDd){
