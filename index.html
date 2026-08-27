@@ -815,34 +815,19 @@ window.addEventListener('DOMContentLoaded', async () => {
   grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
   return;
 }
-grid.innerHTML = data.vereine.map(v =>
-  ` <div class="mv-item">
-    <img src="${BBK_VEREIN_LOGOS[v.name] || 'logos/basketball.svg'}" alt="${v.name}">
-    <h3>${v.name}</h3>
-    <select>
-      ${v.mannschaften.map(m => `<option>${m.name}</option>`).join('')}
-    </select>
-  </div> `
-).join('');
-} catch(err) {
-    console.error('Fehler:', err);
-    grid.innerHTML = '<div class="sb-hint">Fehler beim Laden der Daten.</div>';
-  }
-});
-
-      // Zukünftige Zusatzdaten (Website/App/Social) — solange das Sheet
-      // sie noch nicht liefert, bleibt es beim reinen Namen + Icon.
-      const link = v.website || v.web || '';
-      const istLink = link && link.trim();
-      const logoPfad = BBK_VEREIN_LOGOS[v.name];
-      const logoHtml = logoPfad
-        ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">`
-        : '🏀';
-      return `<a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"${istLink ? ' target="_blank" rel="noopener"' : ''}>
-          <div class="mv-card-logo">${logoHtml}</div>
-          <div class="mv-card-name">${esc(v.name)}</div>
-        </a>`;
-    }).join('');
+grid.innerHTML = data.vereine.map(v => {
+  const link = v.website || v.web || '';
+  const istLink = link && link.trim();
+  const logoPfad = BBK_VEREIN_LOGOS[v.name];
+  const logoHtml = logoPfad ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">` : '🏀';
+  return `
+    <a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"
+       ${istLink ? 'target="_blank" rel="noopener"' : ''}>
+      <div class="mv-card-logo">${logoHtml}</div>
+      <div class="mv-card-name">${esc(v.name)}</div>
+    </a>
+  `;
+}).join('');
 
     const mvDd = document.getElementById('mv-verein-dropdown');
     if(mvDd){
