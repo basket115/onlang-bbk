@@ -809,8 +809,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     const resp = await fetch(GAS + '?action=getBbkVereine');
     const data = await resp.json();
     data.vereine.forEach(verein => {
-      verein.mannschaften = verein.mannschaften.map(m => m.name);
-    });
+  verein.mannschaften = verein.mannschaften.map(m => m);
+});
    if(!data || !data.success || !data.vereine || !data.vereine.length){ 
   grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
   return;
