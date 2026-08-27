@@ -787,9 +787,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   const grid = document.getElementById('mv-grid');
   if(!grid) return;
 
-  // Bekannte Vereinslogos (Stand 07.07.2026). Nur eindeutig zuordenbare
-  // Logos sind hier eingetragen — bei Unsicherheit bleibt bewusst das
-  // Basketball-Icon als Fallback, statt falsch zuzuordnen.
   const BBK_VEREIN_LOGOS = {
     'Osterather TV 1893 e. V.': 'logos/Logo-OTV_300326.png',
     'STV Rethel e.V.': 'logos/Logo-Rethel_300326.png',
@@ -806,20 +803,33 @@ window.addEventListener('DOMContentLoaded', async () => {
     'TuS Maccabi Düsseldorf e. V.': 'logos/Logo-Maccabi_300326.png',
     'BSG Blau-Weiß Grevenbroich': 'logos/Logo-Elephants_300326.png',
     'SG Rot-Weiß Gierath 48/62 e.V.': 'logos/Logo-Scorpions-Gierath.svg'
-    // "Logo-Stürzelberg" bewusst NICHT zugeordnet — Verein existiert
-    // aktuell nicht / hat keine Mannschaften im Spielbetrieb (07.07.2026)
   };
 
   try {
     const resp = await fetch(GAS + '?action=getBbkVereine');
     const data = await resp.json();
+    data.vereine.forEach(verein => {
+      verein.mannschaften = verein.mannschaften.map(m => m.name);
+    });
+   if(!data || !data.success || !data.vereine || !data.vereine.length){ 
+  grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
+  return;
+}
+grid.innerHTML = data.vereine.map(v => `
+  <div class="mv-item">
+    <img src="${BBK_VEREIN_LOGOS[v.name] || 'logos/basketball.svg'}" alt="${v.name}">
+    <h3>${v.name}</h3>
+    <select>
+      ${v.mannschaften.map(m => `<option>${m}</option>`).join('')}
+    </select>
+  </div>
+`).join('');
+} catch(err) {
+    console.error('Fehler:', err);
+    grid.innerHTML = '<div class="sb-hint">Fehler beim Laden der Daten.</div>';
+  }
+});
 
-    if(!data || !data.success || !data.vereine || !data.vereine.length){
-      grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
-      return;
-    }
-
-    grid.innerHTML = data.vereine.map(v => {
       // Zukünftige Zusatzdaten (Website/App/Social) — solange das Sheet
       // sie noch nicht liefert, bleibt es beim reinen Namen + Icon.
       const link = v.website || v.web || '';
