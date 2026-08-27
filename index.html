@@ -671,6 +671,23 @@ img{display:block;max-width:100%;}
   overflow-x:visible;
 }
 
+
+
+/* BBK HERO BANNER – Sheet-gesteuert, lokaler Fallback */
+.bbk-hero-banner{
+  display:block;
+  width:100%;
+  border-radius:var(--rx);
+  overflow:hidden;
+  border:1px solid var(--border-2);
+  background:var(--card);
+  box-shadow:var(--card-shadow);
+  transition:transform 180ms ease,border-color 180ms ease,box-shadow 180ms ease;
+}
+.bbk-hero-banner:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 10px 30px rgba(0,0,0,.28);}
+.bbk-hero-banner img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;background:var(--card);}
+@media(max-width:900px){.bbk-hero-right{max-width:620px;width:100%;margin:0 auto 8px;}}
+
 </style>
 </head>
 <body>
@@ -715,25 +732,9 @@ img{display:block;max-width:100%;}
       </div>
     </div>
     <div class="bbk-hero-right">
-      <!-- Platzhalter-Grafik: spätere moderne Plattformgrafik ersetzt diese Struktur 1:1 -->
-      <div class="flow-diagram">
-        <div class="flow-step flow-step-main">Basketballkreis</div>
-        <div class="flow-connector">↓</div>
-        <div class="flow-step flow-step-main">Mitgliedsvereine</div>
-        <div class="flow-connector">↓</div>
-        <div class="flow-step flow-step-brand">ONLANG</div>
-        <div class="flow-connector">↓</div>
-        <div class="flow-branches">
-          <div class="flow-step flow-step-sm">Website</div>
-          <div class="flow-step flow-step-sm">App</div>
-          <div class="flow-step flow-step-sm">Push</div>
-          <div class="flow-step flow-step-sm">Social Media</div>
-          <div class="flow-step flow-step-sm">Vereins-TV</div>
-          <div class="flow-step flow-step-sm">Newsletter</div>
-        </div>
-        <div class="flow-connector">↓</div>
-        <div class="flow-step flow-step-ki">✨ KI-Unterstützung</div>
-      </div>
+      <a id="bbk-hero-banner-link" class="bbk-hero-banner" href="#spielbetrieb" aria-label="BBK Digital – Spielbetrieb">
+        <img id="bbk-hero-banner-img" src="bbk-digital-banner.png" alt="BBK Digital – Neuer Projektpartner für den Spielbetrieb">
+      </a>
     </div>
   </div>
 </div></section>
@@ -1966,6 +1967,7 @@ async function init(){
     applyBranding(br);
     ladeSportband();
     renderHero(news,br);
+    renderBbkHeroBanner(sponsors);
     // News Cards: ab Index 1 — falls weniger als 2 Beiträge, trotzdem anzeigen ab Index 0
     const nvBeitraege = news.length > 1 ? news.slice(1,7) : news.slice(0,6);
     renderNewsV1(nvBeitraege,br);
@@ -2708,6 +2710,40 @@ function schliesseArtikel(e){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')schliesseArtikel();});
 
+
+// BBK Hero-Banner: bevorzugt Sponsor_Inhalte Slot=HERO_RIGHT.
+// Ohne gepflegte Sheet-Zeile bleibt die mitgelieferte lokale Grafik sichtbar.
+function renderBbkHeroBanner(sponsors){
+  const img = document.getElementById('bbk-hero-banner-img');
+  const link = document.getElementById('bbk-hero-banner-link');
+  if(!img || !link) return;
+
+  const liste = Array.isArray(sponsors) ? sponsors : [];
+  const istAktiv = s => !['FALSE','NEIN','0','INAKTIV'].includes(String(s.Aktiv ?? s.aktiv ?? 'TRUE').trim().toUpperCase());
+  const slot = liste.find(s =>
+    String(s.Slot || s.slot || '').trim().toUpperCase() === 'HERO_RIGHT' &&
+    istAktiv(s)
+  );
+
+  if(!slot) return; // lokaler Fallback bleibt bestehen
+
+  const bild = String(slot.Banner_Bild_URL || slot.banner_bild_url || '').trim();
+  const ziel = String(slot.Banner_Link_URL || slot.banner_link_url || '').trim();
+  const text = String(slot.Banner_Text || slot.banner_text || 'BBK Digital – Spielbetrieb').trim();
+
+  if(bild) img.src = bild;
+  img.alt = text;
+  link.setAttribute('aria-label', text);
+
+  if(ziel){
+    link.href = ziel;
+    if(/^https?:\/\//i.test(ziel)){
+      link.target = '_blank';
+      link.rel = 'noopener';
+    }
+  }
+}
+
 function renderSponsors(sponsors,br,sp){
   // Alle Partner normalisieren – unterstützt alle Feldnamen
   function normPartner(s){
@@ -2726,6 +2762,7 @@ function renderSponsors(sponsors,br,sp){
       position: Number(s.Position||s.position)||999,
       aktiv:    String(s.Aktiv||s.aktiv||'Ja').trim(),
       kategorie:s.Kategorie||s.kategorie||'',
+      slot:     String(s.Slot||s.slot||'').trim().toUpperCase(),
     };
   }
 
@@ -2743,7 +2780,7 @@ function renderSponsors(sponsors,br,sp){
   }
 
   // Alle normalisieren + filtern (nur Aktiv=Ja) + sortieren
-  const alle = [...sponsors.map(normPartner)];
+  const alle = [...sponsors.map(normPartner).filter(p=>p.slot!=='HERO_RIGHT')];
   if(sp&&(sp.name||sp.logo)) alle.unshift({...normPartner(sp), position:1, level:'premium'});
   const aktiv = alle.filter(p=>p.aktiv!=='Nein'&&(p.name||p.logo))
                     .sort((a,b)=>a.position-b.position);
