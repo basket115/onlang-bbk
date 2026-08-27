@@ -820,7 +820,7 @@ grid.innerHTML = data.vereine.map(v => `
     <img src="${BBK_VEREIN_LOGOS[v.name] || 'logos/basketball.svg'}" alt="${v.name}">
     <h3>${v.name}</h3>
     <select>
-      ${v.mannschaften.map(m => `<option>${m}</option>`).join('')}
+      ${v.mannschaften.map(m => `<option>${m.name}</option>`).join('')}
     </select>
   </div>
 `).join('');
