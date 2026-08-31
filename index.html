@@ -887,6 +887,7 @@ document.addEventListener('keydown', e => {
 });
 
 window.addEventListener('DOMContentLoaded', async () => {
+  if(!TENANT.modules.mitgliedsvereine) return;
   const grid = document.getElementById('mv-grid');
   if(!grid) return;
 
@@ -1464,6 +1465,7 @@ function bbkRenderSbSpielplan_(wrap, rows, vereinName, teamSlTeamname){
 // Erst starten, wenn die gesamte Seite geparst ist — GAS wird erst weiter
 // unten in der Datei definiert, daher NICHT sofort synchron aufrufen.
 window.addEventListener('DOMContentLoaded', () => {
+  if(!TENANT.modules.bbkSpielbetrieb) return;
   bbkRenderVereinGrid();
   bbkRenderLigaGrid();
 });
@@ -1483,7 +1485,7 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
   <div style="position:relative;padding-top:56.25%;border-radius:var(--rx);overflow:hidden;box-shadow:var(--card-shadow);background:#000;">
     <iframe
-      src="https://bbk-tv.netlify.app"
+      id="tenant-tv-frame" data-tenant-tv="1"
       style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
       allow="autoplay; fullscreen"
       allowfullscreen
@@ -1640,6 +1642,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 
 window.addEventListener('DOMContentLoaded', async () => {
+  if(!TENANT.modules.bbkAllgemein) return;
   // ── Allgemein ──
   try {
     const resp = await fetch(GAS + '?action=getBbkAllgemein');
@@ -1661,7 +1664,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // ── Vorstand aus Tabelle Personen ──
   try {
     const resp = await fetch(
-      GAS + '?action=getPersonen&kundenId=V006&bereich=Vorstand'
+      GAS + '?action=getPersonen&kundenId=' + encodeURIComponent(KUNDE) + '&bereich=Vorstand'
     );
 
     const data = await resp.json();
@@ -1869,6 +1872,86 @@ function kid(){
 }
 const KUNDE=kid();
 
+// ═══════════════════════════════════════════════════════
+// TEMPLATE7 – MANDANTENSTEUERUNG PHASE 1
+// Eine index.html, aber unterschiedliche Module je Kunden-ID.
+// V006 = BBK-Kreisplattform; alle anderen IDs = Vereinswebsite.
+// ═══════════════════════════════════════════════════════
+const TENANT = {
+  kundenId: KUNDE,
+  isBbk: KUNDE === 'V006',
+  modules: {
+    bbk: KUNDE === 'V006',
+    mitgliedsvereine: KUNDE === 'V006',
+    bbkSpielbetrieb: KUNDE === 'V006',
+    bbkAllgemein: KUNDE === 'V006',
+    teams: true,
+    sports: true,
+    tv: true,
+    sponsors: true,
+    app: true
+  }
+};
+
+function tenantApplyStaticLayout_(){
+  if(TENANT.isBbk) return;
+
+  // BBK-exklusive Bereiche auf Vereinsseiten nicht anzeigen.
+  ['start','mitgliedsvereine','vereinsnachrichten','downloads','ueber-bbk'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+
+  // BBK-spezifische Navigation entfernen/umbenennen.
+  document.querySelectorAll('a[href="#mitgliedsvereine"],a[href="#downloads"],a[href="#ueber-bbk"]').forEach(a=>a.remove());
+  document.querySelectorAll('a[href="#bbk-tv"]').forEach(a=>{ a.textContent='Vereins-TV'; });
+  document.querySelectorAll('a[href="#start"]').forEach(a=>{ a.setAttribute('href','#aktuelles'); });
+
+  // BBK-Spielbetrieb wird auf Vereinsseiten nicht automatisch initialisiert.
+  // Die vorhandenen Vereins-Team-/Sportdaten-Funktionen bleiben erhalten.
+  const spielbetrieb=document.getElementById('spielbetrieb');
+  if(spielbetrieb) spielbetrieb.style.display='none';
+
+  // TV-Überschrift neutralisieren. Die echte Quelle wird später tenantbezogen gesetzt.
+  const tvSec=document.getElementById('bbk-tv');
+  if(tvSec){
+    const title=tvSec.querySelector('.sec-title');
+    if(title) title.textContent='Vereins-TV';
+    const sub=title?.parentElement?.querySelector('div[style*="font-size:13px"]');
+    if(sub) sub.textContent='Videos, Highlights und Beiträge unseres Vereins';
+  }
+}
+
+function tenantInitTv_(){
+  const iframe=document.getElementById('tenant-tv-frame');
+  if(!iframe) return;
+
+  const src = TENANT.isBbk
+    ? 'https://bbk-tv.netlify.app'
+    : 'https://onlang-tv.netlify.app/?kunde=' + encodeURIComponent(KUNDE);
+
+  // TV erst laden, wenn der Bereich in die Nähe des sichtbaren Bereichs kommt.
+  const load=()=>{
+    if(!iframe.src) iframe.src=src;
+  };
+  if('IntersectionObserver' in window){
+    const io=new IntersectionObserver(entries=>{
+      if(entries.some(e=>e.isIntersecting)){
+        load();
+        io.disconnect();
+      }
+    },{rootMargin:'500px 0px'});
+    io.observe(iframe);
+  }else{
+    load();
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  tenantApplyStaticLayout_();
+  tenantInitTv_();
+});
+
 // ── Globale Hilfsfunktionen ──────────────────────────────
 function fixU(s){return String(s||'').replace(/Ã¼/g,'ü').replace(/Ã¶/g,'ö').replace(/Ã¤/g,'ä').replace(/ÃŸ/g,'ß').replace(/Ã–/g,'Ö').replace(/Ã„/g,'Ä').replace(/Ã/g,'Ü');}
 
@@ -2023,7 +2106,7 @@ async function init(){
     applyBranding(br);
     ladeSportband();
     renderHero(news,br);
-    renderBbkHeroBanner(sponsors);
+    if(TENANT.isBbk) renderBbkHeroBanner(sponsors);
     // News Cards: ab Index 1 — falls weniger als 2 Beiträge, trotzdem anzeigen ab Index 0
     const nvBeitraege = news.length > 1 ? news.slice(1,7) : news.slice(0,6);
     renderNewsV1(nvBeitraege,br);
