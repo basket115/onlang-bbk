@@ -2588,12 +2588,21 @@ function zeigeTeamModal(t){
       <!-- SPORTDATEN-BEREICH -->
       <div class="sd-wrap" id="sd-wrap-${esc(t.Team_ID||'')}">
         <div class="sd-tabs">
-          <div class="sd-tab on" onclick="sdTab(this,'sd-tabelle-${esc(t.Team_ID||'')}')">📊 Tabelle</div>
-          <div class="sd-tab disabled" title="Demnächst">🏀 Ergebnisse</div>
-          <div class="sd-tab disabled" title="Demnächst">📅 Spielplan</div>
+          <div class="sd-tab on"
+               onclick="sdOpenTeamTab_(this,'tabelle','${esc(t.Team_ID||t.team_id||'')}','${esc(name)}')">📊 Tabelle</div>
+          <div class="sd-tab"
+               onclick="sdOpenTeamTab_(this,'ergebnisse','${esc(t.Team_ID||t.team_id||'')}','${esc(name)}')">🏀 Ergebnisse</div>
+          <div class="sd-tab"
+               onclick="sdOpenTeamTab_(this,'spielplan','${esc(t.Team_ID||t.team_id||'')}','${esc(name)}')">📅 Spieltermine</div>
         </div>
-        <div class="sd-panel on" id="sd-tabelle-${esc(t.Team_ID||'')}">
+        <div class="sd-panel on" id="sd-tabelle-${esc(t.Team_ID||t.team_id||'')}">
           <div class="sd-loading">Lade Tabelle…</div>
+        </div>
+        <div class="sd-panel" id="sd-ergebnisse-${esc(t.Team_ID||t.team_id||'')}">
+          <div class="sd-loading">Ergebnisse werden beim Öffnen geladen…</div>
+        </div>
+        <div class="sd-panel" id="sd-spielplan-${esc(t.Team_ID||t.team_id||'')}">
+          <div class="sd-loading">Spieltermine werden beim Öffnen geladen…</div>
         </div>
       </div>
 
@@ -2605,8 +2614,13 @@ function zeigeTeamModal(t){
   // Tabelle laden
   const teamId = t.Team_ID||t.team_id||'';
   const teamName = t.Team_Name||t.team_name||'';
-  if(teamId) ladeSportTabelle(teamId, teamName);
-  else document.getElementById('sd-wrap-')&&(document.getElementById('sd-wrap-').style.display='none');
+  if(teamId){
+    const p=document.getElementById('sd-tabelle-'+teamId);
+    if(p) p.dataset.loaded='1';
+    ladeSportTabelle(teamId, teamName);
+  } else {
+    document.getElementById('sd-wrap-')&&(document.getElementById('sd-wrap-').style.display='none');
+  }
 }
 
 function schliesseTeamModal(e){
@@ -2764,6 +2778,166 @@ function sbFilterSpielplan(teamId){
 }
 
 // ── Sportdaten: Tab-Wechsel ───────────────────────────────
+
+const _sdTeamCache = { ergebnisse:{}, spielplan:{} };
+
+function sdOpenTeamTab_(el, typ, teamId, teamName){
+  const wrap=el.closest('.sd-wrap');
+  if(!wrap) return;
+
+  wrap.querySelectorAll('.sd-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  wrap.querySelectorAll('.sd-panel').forEach(p=>p.classList.remove('on'));
+
+  const panelId='sd-'+typ+'-'+teamId;
+  const panel=document.getElementById(panelId);
+  if(panel) panel.classList.add('on');
+
+  if(typ==='tabelle'){
+    if(panel && !panel.dataset.loaded){
+      ladeSportTabelle(teamId,teamName);
+      panel.dataset.loaded='1';
+    }
+    return;
+  }
+
+  if(typ==='ergebnisse'){
+    ladeTeamErgebnisse_(teamId,teamName);
+    return;
+  }
+
+  if(typ==='spielplan'){
+    ladeTeamSpieltermine_(teamId,teamName);
+  }
+}
+
+function _teamMatch_(row, teamId, teamName){
+  const rid=String(row.Team_ID||row.team_id||'').trim();
+  if(rid && teamId && rid===String(teamId)) return true;
+
+  const n=String(teamName||'').toLowerCase();
+  const heim=fixU(row.heim||row.Heim||'').toLowerCase();
+  const gast=fixU(row.gast||row.Gast||'').toLowerCase();
+
+  // Nur als Fallback, falls der Endpunkt keine Team_ID mitliefert.
+  const woerter=n.split(/\s+/).filter(w=>w.length>3);
+  return !!woerter.length && woerter.some(w=>heim.includes(w)||gast.includes(w));
+}
+
+function _parseGameDate_(row){
+  const raw=row.datum||row.Datum||'';
+  if(!raw) return null;
+
+  // DD.MM.YYYY
+  const m=String(raw).match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+  if(m) return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),12,0,0);
+
+  const d=new Date(raw);
+  return isNaN(d) ? null : d;
+}
+
+function _fmtGameDate_(row){
+  const raw=row.datum||row.Datum||'';
+  if(/^\d{2}\.\d{2}\.\d{4}/.test(String(raw))) return String(raw).substring(0,10);
+  const d=_parseGameDate_(row);
+  return d ? d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) : String(raw||'');
+}
+
+function _fmtGameTime_(row){
+  const raw=row.uhrzeit||row.Uhrzeit||'';
+  if(!raw) return '';
+  if(/^\d{2}:\d{2}/.test(String(raw))) return String(raw).substring(0,5);
+  const d=new Date(raw);
+  return isNaN(d) ? String(raw) : d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function _ladeTeamSpieleBasis_(teamId,teamName){
+  const key=String(teamId||teamName||'');
+  if(_sdTeamCache.ergebnisse[key]) return _sdTeamCache.ergebnisse[key];
+
+  const url=GAS+'?action=getErgebnisse&kundenId='+encodeURIComponent(KUNDE);
+  const resp=await fetch(url);
+  const data=await resp.json();
+  const rows=(data && data.success && Array.isArray(data.ergebnisse)) ? data.ergebnisse : [];
+  const teamRows=rows.filter(r=>_teamMatch_(r,teamId,teamName));
+
+  _sdTeamCache.ergebnisse[key]=teamRows;
+  return teamRows;
+}
+
+function _renderTeamGameCards_(panel, rows, showScore){
+  if(!rows.length){
+    panel.innerHTML='<div class="sd-empty">Keine Daten für diese Mannschaft verfügbar.</div>';
+    return;
+  }
+
+  panel.innerHTML='<div class="erg-grid">'+rows.map(r=>{
+    const heim=fixU(r.heim||r.Heim||'');
+    const gast=fixU(r.gast||r.Gast||'');
+    const score=String(r.endstand||r.Endstand||r.ergebnis||r.Ergebnis||'').replace(/\s/g,'');
+    const datum=_fmtGameDate_(r);
+    const zeit=_fmtGameTime_(r);
+
+    return `<div class="erg-card">
+      <div class="erg-date">
+        <span class="erg-date-day">${esc(datum)}</span>
+        ${zeit?`<span class="erg-date-time">${esc(zeit)} Uhr</span>`:''}
+      </div>
+      <div class="erg-teams">
+        <div class="erg-team">${esc(heim)}</div>
+        <div class="erg-team">${esc(gast)}</div>
+      </div>
+      ${showScore?`<div class="erg-score">${esc(score||'–:–')}</div>`:''}
+    </div>`;
+  }).join('')+'</div>';
+}
+
+async function ladeTeamErgebnisse_(teamId,teamName){
+  const panel=document.getElementById('sd-ergebnisse-'+teamId);
+  if(!panel) return;
+  if(panel.dataset.loaded==='1') return;
+
+  panel.innerHTML='<div class="sd-loading">Lade Ergebnisse…</div>';
+  try{
+    const rows=await _ladeTeamSpieleBasis_(teamId,teamName);
+    const mitErgebnis=rows.filter(r=>{
+      const s=String(r.endstand||r.Endstand||r.ergebnis||r.Ergebnis||'').trim();
+      const d=_parseGameDate_(r);
+      return !!s || (d && d < new Date());
+    }).sort((a,b)=>(_parseGameDate_(b)||0)-(_parseGameDate_(a)||0));
+
+    _renderTeamGameCards_(panel,mitErgebnis,true);
+    panel.dataset.loaded='1';
+  }catch(err){
+    panel.innerHTML='<div class="sd-empty">Ergebnisse konnten nicht geladen werden.</div>';
+    console.warn('ladeTeamErgebnisse_:',err);
+  }
+}
+
+async function ladeTeamSpieltermine_(teamId,teamName){
+  const panel=document.getElementById('sd-spielplan-'+teamId);
+  if(!panel) return;
+  if(panel.dataset.loaded==='1') return;
+
+  panel.innerHTML='<div class="sd-loading">Lade Spieltermine…</div>';
+  try{
+    const rows=await _ladeTeamSpieleBasis_(teamId,teamName);
+    const heute=new Date(); heute.setHours(0,0,0,0);
+
+    const kommende=rows.filter(r=>{
+      const s=String(r.endstand||r.Endstand||r.ergebnis||r.Ergebnis||'').trim();
+      const d=_parseGameDate_(r);
+      return !s && (!d || d>=heute);
+    }).sort((a,b)=>(_parseGameDate_(a)||0)-(_parseGameDate_(b)||0));
+
+    _renderTeamGameCards_(panel,kommende,false);
+    panel.dataset.loaded='1';
+  }catch(err){
+    panel.innerHTML='<div class="sd-empty">Spieltermine konnten nicht geladen werden.</div>';
+    console.warn('ladeTeamSpieltermine_:',err);
+  }
+}
+
 function sdTab(el, panelId){
   // Tabs: nur aktive (nicht disabled) umschalten
   const tabs=el.parentElement.querySelectorAll('.sd-tab:not(.disabled)');
