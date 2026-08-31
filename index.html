@@ -2079,10 +2079,59 @@ async function ladeT7Bootstrap_(){
   try{
     const r=await api({action:'get_bootstrap',kundenId:KUNDE});
     if(r && r.success){
+      const branding =
+        r.branding?.branding ||
+        r.branding ||
+        {};
+
+      let beitraege =
+        Array.isArray(r.beitraege) ? r.beitraege :
+        Array.isArray(r.beitraege?.rows) ? r.beitraege.rows :
+        Array.isArray(r.studio?.beitraege) ? r.studio.beitraege :
+        [];
+
+      let teams =
+        Array.isArray(r.teams) ? r.teams :
+        Array.isArray(r.teams?.teams) ? r.teams.teams :
+        [];
+
+      let sponsor =
+        r.sponsor ||
+        r.studio?.sponsor ||
+        null;
+
+      // WICHTIG:
+      // Der bestehende Bootstrap enthält nicht zwingend dieselben Studio-Beiträge,
+      // die Template7 bisher über getStudioBeitraege verwendet hat.
+      // Nur wenn sie im Bootstrap fehlen, werden sie gezielt nachgeladen.
+      const nachladen = [];
+
+      if(!beitraege.length){
+        nachladen.push(
+          api({action:'getStudioBeitraege',kundenId:KUNDE})
+            .then(stR=>{
+              beitraege = stR.beitraege || [];
+              sponsor = stR.sponsor || sponsor;
+            })
+        );
+      }
+
+      if(!teams.length){
+        nachladen.push(
+          api({action:'get_teams',kundenId:KUNDE})
+            .then(tR=>{
+              teams = tR.teams || [];
+            })
+        );
+      }
+
+      if(nachladen.length) await Promise.all(nachladen);
+
       return {
-        branding: r.branding || {},
-        beitraege: Array.isArray(r.beitraege) ? r.beitraege : (r.beitraege?.rows || []),
-        teams: Array.isArray(r.teams) ? r.teams : [],
+        branding,
+        beitraege,
+        teams,
+        sponsor,
         bootstrap:true
       };
     }
@@ -2381,6 +2430,11 @@ function renderNewsV1(beitraege, br){
 
 function renderTeams(teams,br){
   const row=document.getElementById('teams-row');
+  if(!row) return;
+  if(!Array.isArray(teams) || !teams.length){
+    row.innerHTML='<div class="empty">Mannschaftsdaten werden geladen bzw. sind noch nicht verfügbar.</div>';
+    return;
+  }
   // Sortierung falls vorhanden, sonst Reihenfolge aus Sheet
   // Aktiv-Filter: nur ausblenden wenn explizit 'Nein'
   const aktiveTeams = teams
