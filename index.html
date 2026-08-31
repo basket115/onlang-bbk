@@ -1896,6 +1896,12 @@ const TENANT = {
 function tenantApplyStaticLayout_(){
   if(TENANT.isBbk) return;
 
+  // Vereinsseite: verbleibende BBK-Bezeichnungen neutralisieren.
+  const newsTitle=document.querySelector('#aktuelle-news .nv-title');
+  if(newsTitle) newsTitle.textContent='Aktuelles';
+  const newsSub=document.querySelector('#aktuelle-news .nv-subtitle');
+  if(newsSub) newsSub.textContent='Neuigkeiten unseres Vereins — direkt aus dem ONLANG Studio';
+
   // BBK-exklusive Bereiche auf Vereinsseiten nicht anzeigen.
   ['start','mitgliedsvereine','vereinsnachrichten','downloads','ueber-bbk'].forEach(id=>{
     const el=document.getElementById(id);
@@ -2053,6 +2059,51 @@ function isEv(b){return EV_ARTEN.some(v=>String(b.beitragsart||b.kategorie||'').
 function hasVid(b){return!!b.video_url.trim();}
 async function api(p){const u=GAS+'?'+Object.entries(p).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v||'')).join('&');return(await fetch(u)).json();}
 
+// ═══════════════════════════════════════════════════════
+// PERFORMANCE PHASE 2
+// Primär: ein Bootstrap-Request für Branding + Beiträge + Teams.
+// Fallback: bisherige Einzel-Requests, falls Bootstrap nicht verfügbar ist.
+// Sponsoren werden bewusst NACH dem ersten Rendern geladen.
+// ═══════════════════════════════════════════════════════
+async function ladeT7Bootstrap_(){
+  try{
+    const r=await api({action:'get_bootstrap',kundenId:KUNDE});
+    if(r && r.success){
+      return {
+        branding: r.branding || {},
+        beitraege: Array.isArray(r.beitraege) ? r.beitraege : (r.beitraege?.rows || []),
+        teams: Array.isArray(r.teams) ? r.teams : [],
+        bootstrap:true
+      };
+    }
+  }catch(e){
+    console.warn('[T7] Bootstrap nicht verfügbar, Fallback auf Einzel-Requests:',e);
+  }
+
+  const [bR,stR,tR]=await Promise.all([
+    api({action:'get_branding',       kundenId:KUNDE}),
+    api({action:'getStudioBeitraege', kundenId:KUNDE}),
+    api({action:'get_teams',          kundenId:KUNDE})
+  ]);
+
+  return {
+    branding:bR.branding||{},
+    beitraege:stR.beitraege||[],
+    teams:tR.teams||[],
+    sponsor:stR.sponsor||null,
+    bootstrap:false
+  };
+}
+
+async function ladeSponsorsSpaeter_(br, studioSponsor){
+  try{
+    const sR=await api({action:'get_sponsors',kundenId:KUNDE});
+    renderSponsors(sR.sponsors||[],br,studioSponsor||null);
+  }catch(e){
+    console.warn('[T7] Sponsoren konnten nicht geladen werden:',e);
+  }
+}
+
 let _alle=[];
 let _aktivTeam='';
 let _vereinsName='';
@@ -2063,23 +2114,17 @@ async function init(){
     const studioUrl=GAS+'?action=getStudioBeitraege&kundenId='+KUNDE;
     console.log('[T7] Studio-URL:', studioUrl);
 
-    const[bR,stR,tR,sR]=await Promise.all([
-      api({action:'get_branding',       kundenId:KUNDE}),
-      api({action:'getStudioBeitraege', kundenId:KUNDE}),
-      api({action:'get_teams',          kundenId:KUNDE}),
-      api({action:'get_sponsors',       kundenId:KUNDE})
-    ]);
+    const boot=await ladeT7Bootstrap_();
 
-    console.log('[T7] branding:', bR);
-    console.log('[T7] studioR:', stR);
-    console.log('[T7] beitraege roh:', stR.beitraege?.length, 'Einträge');
+    console.log('[T7] Bootstrap aktiv:', boot.bootstrap);
+    console.log('[T7] branding:', boot.branding);
+    console.log('[T7] beitraege roh:', boot.beitraege?.length, 'Einträge');
 
-    const br=bR.branding||{};
-    const sponsor=stR.sponsor||null;
-    const teams=tR.teams||[];
-    const sponsors=sR.sponsors||[];
+    const br=boot.branding||{};
+    const sponsor=boot.sponsor||null;
+    const teams=boot.teams||[];
     _vereinsName=br.Verein_Name||br.vereinsname||'';
-    _alle = (stR.beitraege || [])
+    _alle = (boot.beitraege || [])
   .map(normBeitrag)
   .filter(nurFreigegeben)
   .sort(function(a, b) {
@@ -2104,9 +2149,9 @@ async function init(){
     const evs=_alle.filter(b=>isEv(b));
     const news=_alle.filter(b=>!isEv(b)&&b.beitragsart!=='Vereins-TV'&&b.kategorie!=='Vereins-TV');
     applyBranding(br);
-    ladeSportband();
+    setTimeout(()=>ladeSportband(),250);
     renderHero(news,br);
-    if(TENANT.isBbk) renderBbkHeroBanner(sponsors);
+    // BBK-Hero-Sponsoren werden mit dem späteren Sponsor-Request ergänzt.
     // News Cards: ab Index 1 — falls weniger als 2 Beiträge, trotzdem anzeigen ab Index 0
     const nvBeitraege = news.length > 1 ? news.slice(1,7) : news.slice(0,6);
     renderNewsV1(nvBeitraege,br);
@@ -2130,7 +2175,8 @@ async function init(){
     }
     renderTeams(teams,br);
     renderEvs(evs);
-    renderSponsors(sponsors,br,sponsor);
+    // Sponsoren blockieren den ersten sichtbaren Seitenaufbau nicht mehr.
+    setTimeout(()=>ladeSponsorsSpaeter_(br,sponsor),0);
     renderKontakt(br);
     renderApp(br);
     initNav();
