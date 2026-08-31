@@ -2076,56 +2076,37 @@ async function api(p){const u=GAS+'?'+Object.entries(p).map(([k,v])=>encodeURICo
 // Sponsoren werden bewusst NACH dem ersten Rendern geladen.
 // ═══════════════════════════════════════════════════════
 async function ladeT7Bootstrap_(){
+  // PHASE 3.3:
+  // Bootstrap bleibt Basis für Branding/Settings.
+  // Die Website-News kommen weiterhin sicher aus getStudioBeitraege,
+  // weil der aktuelle get_bootstrap offenbar eine andere Beitragsmenge liefert.
+  // Teams werden parallel mitgeladen, damit die Spieldaten-Fenster zuverlässig da sind.
   try{
-    const r=await api({action:'get_bootstrap',kundenId:KUNDE});
+    const [r,stR,tR] = await Promise.all([
+      api({action:'get_bootstrap',       kundenId:KUNDE}),
+      api({action:'getStudioBeitraege',  kundenId:KUNDE}),
+      api({action:'get_teams',           kundenId:KUNDE})
+    ]);
+
     if(r && r.success){
       const branding =
         r.branding?.branding ||
         r.branding ||
         {};
 
-      let beitraege =
-        Array.isArray(r.beitraege) ? r.beitraege :
-        Array.isArray(r.beitraege?.rows) ? r.beitraege.rows :
-        Array.isArray(r.studio?.beitraege) ? r.studio.beitraege :
-        [];
+      const beitraege =
+        Array.isArray(stR?.beitraege) ? stR.beitraege : [];
 
-      let teams =
-        Array.isArray(r.teams) ? r.teams :
-        Array.isArray(r.teams?.teams) ? r.teams.teams :
-        [];
+      const teams =
+        Array.isArray(r.teams) && r.teams.length ? r.teams :
+        Array.isArray(r.teams?.teams) && r.teams.teams.length ? r.teams.teams :
+        Array.isArray(tR?.teams) ? tR.teams : [];
 
-      let sponsor =
+      const sponsor =
+        stR?.sponsor ||
         r.sponsor ||
         r.studio?.sponsor ||
         null;
-
-      // WICHTIG:
-      // Der bestehende Bootstrap enthält nicht zwingend dieselben Studio-Beiträge,
-      // die Template7 bisher über getStudioBeitraege verwendet hat.
-      // Nur wenn sie im Bootstrap fehlen, werden sie gezielt nachgeladen.
-      const nachladen = [];
-
-      if(!beitraege.length){
-        nachladen.push(
-          api({action:'getStudioBeitraege',kundenId:KUNDE})
-            .then(stR=>{
-              beitraege = stR.beitraege || [];
-              sponsor = stR.sponsor || sponsor;
-            })
-        );
-      }
-
-      if(!teams.length){
-        nachladen.push(
-          api({action:'get_teams',kundenId:KUNDE})
-            .then(tR=>{
-              teams = tR.teams || [];
-            })
-        );
-      }
-
-      if(nachladen.length) await Promise.all(nachladen);
 
       return {
         branding,
@@ -2135,25 +2116,34 @@ async function ladeT7Bootstrap_(){
         bootstrap:true
       };
     }
+
+    // Falls Bootstrap formal antwortet, aber nicht success:true:
+    return {
+      branding:(r?.branding?.branding || r?.branding || {}),
+      beitraege:Array.isArray(stR?.beitraege) ? stR.beitraege : [],
+      teams:Array.isArray(tR?.teams) ? tR.teams : [],
+      sponsor:stR?.sponsor || null,
+      bootstrap:false
+    };
+
   }catch(e){
-    console.warn('[T7] Bootstrap nicht verfügbar, Fallback auf Einzel-Requests:',e);
+    console.warn('[T7] Kombinierter Start fehlgeschlagen, Fallback:',e);
+
+    const [bR,stR,tR]=await Promise.all([
+      api({action:'get_branding',       kundenId:KUNDE}),
+      api({action:'getStudioBeitraege', kundenId:KUNDE}),
+      api({action:'get_teams',          kundenId:KUNDE})
+    ]);
+
+    return {
+      branding:bR.branding||{},
+      beitraege:stR.beitraege||[],
+      teams:tR.teams||[],
+      sponsor:stR.sponsor||null,
+      bootstrap:false
+    };
   }
-
-  const [bR,stR,tR]=await Promise.all([
-    api({action:'get_branding',       kundenId:KUNDE}),
-    api({action:'getStudioBeitraege', kundenId:KUNDE}),
-    api({action:'get_teams',          kundenId:KUNDE})
-  ]);
-
-  return {
-    branding:bR.branding||{},
-    beitraege:stR.beitraege||[],
-    teams:tR.teams||[],
-    sponsor:stR.sponsor||null,
-    bootstrap:false
-  };
 }
-
 let _sponsorenGeladen=false;
 async function ladeSponsorsSpaeter_(br, studioSponsor){
   if(_sponsorenGeladen) return;
@@ -2196,7 +2186,8 @@ async function init(){
 
     console.log('[T7] Bootstrap aktiv:', boot.bootstrap);
     console.log('[T7] branding:', boot.branding);
-    console.log('[T7] beitraege roh:', boot.beitraege?.length, 'Einträge');
+    console.log('[T7] Studio-Beiträge:', boot.beitraege?.length || 0);
+    console.log('[T7] Teams:', boot.teams?.length || 0);
 
     const br=boot.branding||{};
     const sponsor=boot.sponsor||null;
