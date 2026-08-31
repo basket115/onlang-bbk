@@ -1896,40 +1896,52 @@ const TENANT = {
 function tenantApplyStaticLayout_(){
   if(TENANT.isBbk) return;
 
-  // Vereinsseite: Nachrichten + Teams/Sportdaten ausdrücklich sichtbar lassen.
-  ['aktuelles','aktuelle-news','teams','veranstaltungen','bbk-tv','sponsoren','app'].forEach(id=>{
+  // Vereinsbereiche sichtbar halten.
+  ['aktuelles','aktuelle-news','veranstaltungen','bbk-tv','sponsoren','app','spielbetrieb'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.style.display='';
   });
 
-  // Vereinsseite: verbleibende BBK-Bezeichnungen neutralisieren.
-  const newsTitle=document.querySelector('#aktuelle-news .nv-title');
-  if(newsTitle) newsTitle.textContent='Aktuelles';
-  const newsSub=document.querySelector('#aktuelle-news .nv-subtitle');
-  if(newsSub) newsSub.textContent='Neuigkeiten unseres Vereins — direkt aus dem ONLANG Studio';
-
-  const teamsTitle=document.querySelector('#teams .sec-title');
-  if(teamsTitle) teamsTitle.textContent='Unsere Teams & Spieldaten';
-
-  // Nur echte BBK-exklusive Bereiche ausblenden.
-  ['start','mitgliedsvereine','vereinsnachrichten','downloads','ueber-bbk','spielbetrieb'].forEach(id=>{
+  // BBK-exklusive Bereiche ausblenden.
+  ['start','mitgliedsvereine','vereinsnachrichten','downloads','ueber-bbk'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.style.display='none';
   });
 
   // BBK-spezifische Navigation entfernen.
   document.querySelectorAll('a[href="#mitgliedsvereine"],a[href="#downloads"],a[href="#ueber-bbk"]').forEach(a=>a.remove());
-
-  // Vereinsnavigation:
-  // "Startseite" führt zu den aktuellen Nachrichten.
   document.querySelectorAll('a[href="#start"]').forEach(a=>a.setAttribute('href','#aktuelles'));
+  document.querySelectorAll('a[href="#bbk-tv"]').forEach(a=>{ a.textContent='Vereins-TV'; });
 
-  // "Spielbetrieb" führt auf Vereinsseiten direkt zu den Mannschaften.
-  // Dort öffnen die Mannschaftskarten die vorhandenen Spieldaten-Fenster.
-  document.querySelectorAll('a[href="#spielbetrieb"]').forEach(a=>a.setAttribute('href','#teams'));
+  // Nachrichten neutralisieren.
+  const newsTitle=document.querySelector('#aktuelle-news .nv-title');
+  if(newsTitle) newsTitle.textContent='Aktuelles';
+  const newsSub=document.querySelector('#aktuelle-news .nv-subtitle');
+  if(newsSub) newsSub.textContent='Neuigkeiten unseres Vereins — direkt aus dem ONLANG Studio';
+
+  // V002/andere Vereine: BBK-Spielbetrieb ersetzen.
+  // Es bleibt NUR die Mannschaftsauswahl, keine Liga- und keine Vereinsliste.
+  const sp=document.getElementById('spielbetrieb');
+  if(sp){
+    sp.innerHTML=`
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="sec-title">Spielbetrieb</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;">
+              Mannschaft auswählen — Spielplan, Ergebnisse und Tabelle öffnen
+            </div>
+          </div>
+        </div>
+        <div class="teams-row" id="verein-spielbetrieb-teams"></div>
+      </div>`;
+  }
+
+  // Der bisherige separate Teams-Bereich wird nicht doppelt gezeigt.
+  const teamsSec=document.getElementById('teams');
+  if(teamsSec) teamsSec.style.display='none';
 
   // TV neutral benennen.
-  document.querySelectorAll('a[href="#bbk-tv"]').forEach(a=>{ a.textContent='Vereins-TV'; });
   const tvSec=document.getElementById('bbk-tv');
   if(tvSec){
     const title=tvSec.querySelector('.sec-title');
@@ -1938,6 +1950,7 @@ function tenantApplyStaticLayout_(){
     if(sub) sub.textContent='Videos, Highlights und Beiträge unseres Vereins';
   }
 }
+
 function tenantInitTv_(){
   const iframe=document.getElementById('tenant-tv-frame');
   if(!iframe) return;
@@ -2243,6 +2256,7 @@ async function init(){
       });
     }
     renderTeams(teams,br);
+    renderVereinSpielbetrieb_(teams);
     renderEvs(evs);
     // Sponsoren werden erst beim Annähern an den Bereich geladen.
     initSponsorsLazy_(br,sponsor);
@@ -2416,6 +2430,38 @@ function renderNewsV1(beitraege, br){
           <span class="nv-link">Weiterlesen →</span>
         </div>
       </div>`;
+  }).join('');
+}
+
+function renderVereinSpielbetrieb_(teams){
+  if(TENANT.isBbk) return;
+  const row=document.getElementById('verein-spielbetrieb-teams');
+  if(!row) return;
+
+  const aktiveTeams=(Array.isArray(teams)?teams:[])
+    .filter(t=>String(t.Aktiv||t.aktiv||'Ja').trim()!=='Nein')
+    .sort((a,b)=>(Number(a.Sortierung||a.sortierung)||999)-(Number(b.Sortierung||b.sortierung)||999));
+
+  if(!aktiveTeams.length){
+    row.innerHTML='<div class="empty">Mannschaftsdaten sind noch nicht verfügbar.</div>';
+    return;
+  }
+
+  row.innerHTML=aktiveTeams.map(t=>{
+    const n=t.Team_Name||t.team_name||t.Mannschaftsname||'–';
+    const f=t.Team_Foto||t.team_foto||'';
+    const ini=n.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+
+    return `<div class="team-chip" onclick="filterTeam('${esc(n)}',this)">
+      <div class="team-ring">
+        <div class="team-in">
+          ${f
+            ? `<img src="${esc(f)}" alt="" onerror="this.parentElement.innerHTML='<span style=font-size:13px;font-weight:900>${ini}</span>'">`
+            : `<span style="font-size:13px;font-weight:900">${ini}</span>`}
+        </div>
+      </div>
+      <div class="team-n">${esc(n)}</div>
+    </div>`;
   }).join('');
 }
 
