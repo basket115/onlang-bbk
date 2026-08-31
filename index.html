@@ -2089,102 +2089,72 @@ async function api(p){const u=GAS+'?'+Object.entries(p).map(([k,v])=>encodeURICo
 // Sponsoren werden bewusst NACH dem ersten Rendern geladen.
 // ═══════════════════════════════════════════════════════
 async function ladeT7Bootstrap_(){
-  // PHASE 3.3:
-  // Bootstrap bleibt Basis für Branding/Settings.
-  // Die Website-News kommen weiterhin sicher aus getStudioBeitraege,
-  // weil der aktuelle get_bootstrap offenbar eine andere Beitragsmenge liefert.
-  // Teams werden parallel mitgeladen, damit die Spieldaten-Fenster zuverlässig da sind.
+  // PHASE 4:
+  // Ein Startrequest. Backend T7-PHASE4 liefert:
+  // Branding + Studio-Beiträge + Teams + Sponsoren + Website-Settings.
   try{
-    const [r,stR,tR] = await Promise.all([
-      api({action:'get_bootstrap',       kundenId:KUNDE}),
-      api({action:'getStudioBeitraege',  kundenId:KUNDE}),
-      api({action:'get_teams',           kundenId:KUNDE})
-    ]);
+    const r = await api({action:'get_bootstrap', kundenId:KUNDE});
 
     if(r && r.success){
-      const branding =
-        r.branding?.branding ||
-        r.branding ||
-        {};
-
-      const beitraege =
-        Array.isArray(stR?.beitraege) ? stR.beitraege : [];
-
-      const teams =
-        Array.isArray(r.teams) && r.teams.length ? r.teams :
-        Array.isArray(r.teams?.teams) && r.teams.teams.length ? r.teams.teams :
-        Array.isArray(tR?.teams) ? tR.teams : [];
-
-      const sponsor =
-        stR?.sponsor ||
-        r.sponsor ||
-        r.studio?.sponsor ||
-        null;
-
       return {
-        branding,
-        beitraege,
-        teams,
-        sponsor,
-        bootstrap:true
+        branding: r.branding || {},
+        beitraege: Array.isArray(r.beitraege) ? r.beitraege : [],
+        teams: Array.isArray(r.teams) ? r.teams : [],
+        sponsors: Array.isArray(r.sponsors) ? r.sponsors : [],
+        sponsor: r.studioSponsor || null,
+        settings: r.settings || {},
+        bootstrap:true,
+        meta:r.meta || {}
       };
     }
 
-    // Falls Bootstrap formal antwortet, aber nicht success:true:
-    return {
-      branding:(r?.branding?.branding || r?.branding || {}),
-      beitraege:Array.isArray(stR?.beitraege) ? stR.beitraege : [],
-      teams:Array.isArray(tR?.teams) ? tR.teams : [],
-      sponsor:stR?.sponsor || null,
-      bootstrap:false
-    };
+    throw new Error('Bootstrap antwortet nicht mit success:true');
 
   }catch(e){
-    console.warn('[T7] Kombinierter Start fehlgeschlagen, Fallback:',e);
+    console.warn('[T7] Bootstrap fehlgeschlagen, Sicherheits-Fallback:',e);
 
-    const [bR,stR,tR]=await Promise.all([
-      api({action:'get_branding',       kundenId:KUNDE}),
-      api({action:'getStudioBeitraege', kundenId:KUNDE}),
-      api({action:'get_teams',          kundenId:KUNDE})
+    // Nur Notfall-Fallback. Im Normalbetrieb entstehen diese Requests NICHT.
+    const [bR,stR,tR,sR]=await Promise.all([
+      api({action:'get_branding',        kundenId:KUNDE}),
+      api({action:'getStudioBeitraege',  kundenId:KUNDE}),
+      api({action:'get_teams',           kundenId:KUNDE}),
+      api({action:'get_sponsors',        kundenId:KUNDE})
     ]);
 
     return {
       branding:bR.branding||{},
       beitraege:stR.beitraege||[],
       teams:tR.teams||[],
+      sponsors:sR.sponsors||[],
       sponsor:stR.sponsor||null,
-      bootstrap:false
+      settings:{},
+      bootstrap:false,
+      meta:{bootstrapVersion:'FALLBACK'}
     };
   }
 }
 let _sponsorenGeladen=false;
-async function ladeSponsorsSpaeter_(br, studioSponsor){
+function ladeSponsorsSpaeter_(br, studioSponsor, bootstrapSponsors){
   if(_sponsorenGeladen) return;
   _sponsorenGeladen=true;
-  try{
-    const sR=await api({action:'get_sponsors',kundenId:KUNDE});
-    renderSponsors(sR.sponsors||[],br,studioSponsor||null);
-    if(TENANT.isBbk) renderBbkHeroBanner(sR.sponsors||[]);
-  }catch(e){
-    _sponsorenGeladen=false;
-    console.warn('[T7] Sponsoren konnten nicht geladen werden:',e);
-  }
+  const sponsors=Array.isArray(bootstrapSponsors)?bootstrapSponsors:[];
+  renderSponsors(sponsors,br,studioSponsor||null);
+  if(TENANT.isBbk) renderBbkHeroBanner(sponsors);
 }
 
-function initSponsorsLazy_(br,studioSponsor){
+function initSponsorsLazy_(br,studioSponsor,bootstrapSponsors){
   const sec=document.getElementById('sponsoren');
   if(!sec) return;
   if('IntersectionObserver' in window){
     const io=new IntersectionObserver(entries=>{
       if(entries.some(e=>e.isIntersecting)){
-        ladeSponsorsSpaeter_(br,studioSponsor);
+        ladeSponsorsSpaeter_(br,studioSponsor,bootstrapSponsors);
         io.disconnect();
       }
     },{rootMargin:'250px 0px',threshold:0.01});
     io.observe(sec);
   }else{
-    // Alte Browser: erst nach deutlicher Verzögerung, nicht im Startpfad.
-    setTimeout(()=>ladeSponsorsSpaeter_(br,studioSponsor),5000);
+    setTimeout(()=>ladeSponsorsSpaeter_(br,studioSponsor,bootstrapSponsors),1500);
   }
 }
 
@@ -2201,9 +2171,11 @@ async function init(){
     console.log('[T7] branding:', boot.branding);
     console.log('[T7] Studio-Beiträge:', boot.beitraege?.length || 0);
     console.log('[T7] Teams:', boot.teams?.length || 0);
+    console.log('[T7] Bootstrap-Meta:', boot.meta || {});
 
     const br=boot.branding||{};
     const sponsor=boot.sponsor||null;
+    const bootstrapSponsors=boot.sponsors||[];
     const teams=boot.teams||[];
     _vereinsName=br.Verein_Name||br.vereinsname||'';
     _alle = (boot.beitraege || [])
@@ -2259,7 +2231,7 @@ async function init(){
     renderVereinSpielbetrieb_(teams);
     renderEvs(evs);
     // Sponsoren werden erst beim Annähern an den Bereich geladen.
-    initSponsorsLazy_(br,sponsor);
+    initSponsorsLazy_(br,sponsor,bootstrapSponsors);
     renderKontakt(br);
     renderApp(br);
     initNav();
@@ -2779,7 +2751,15 @@ function sbFilterSpielplan(teamId){
 
 // ── Sportdaten: Tab-Wechsel ───────────────────────────────
 
-const _sdTeamCache = { ergebnisse:{}, spielplan:{} };
+const _sdTeamCache = { ergebnisse:{}, spielplan:{}, tabelle:{} };
+
+function _findTeam_(teamId){
+  return (_alleTeams||[]).find(t=>String(t.Team_ID||t.team_id||'')===String(teamId||'')) || null;
+}
+
+function _istBbkSportTeam_(team){
+  return !!team && String(team.Sportdaten_Quelle||'')==='BBK_Spielbetrieb';
+}
 
 function sdOpenTeamTab_(el, typ, teamId, teamName){
   const wrap=el.closest('.sd-wrap');
@@ -2789,80 +2769,91 @@ function sdOpenTeamTab_(el, typ, teamId, teamName){
   el.classList.add('on');
   wrap.querySelectorAll('.sd-panel').forEach(p=>p.classList.remove('on'));
 
-  const panelId='sd-'+typ+'-'+teamId;
-  const panel=document.getElementById(panelId);
+  const panel=document.getElementById('sd-'+typ+'-'+teamId);
   if(panel) panel.classList.add('on');
 
-  if(typ==='tabelle'){
-    if(panel && !panel.dataset.loaded){
-      ladeSportTabelle(teamId,teamName);
-      panel.dataset.loaded='1';
+  if(typ==='tabelle') return ladeSportTabelle(teamId,teamName);
+  if(typ==='ergebnisse') return ladeTeamErgebnisse_(teamId,teamName);
+  if(typ==='spielplan') return ladeTeamSpieltermine_(teamId,teamName);
+}
+
+async function _ladeBbkTeamPanel_(panel, team, action, feldName, renderFn){
+  if(!panel || !team) return;
+  const key=String(team.Team_ID||'')+'|'+feldName;
+  if(_sdTeamCache[feldName] && _sdTeamCache[feldName][key]) return;
+
+  panel.innerHTML='<div class="sd-loading">Lade Daten…</div>';
+
+  try{
+    const url=GAS+'?action='+encodeURIComponent(action)
+      +'&vereinName='+encodeURIComponent(team.Verein_Name||'')
+      +'&mannschaft='+encodeURIComponent(team.Mannschaft_Name||team.Team_Name||'')
+      +'&teamSlTeamname='+encodeURIComponent(team.TeamSL_Teamname||'');
+
+    const resp=await fetch(url);
+    const data=await resp.json();
+    const rows=data && data[feldName];
+
+    if(!data || !data.success || !Array.isArray(rows) || !rows.length || data.status==='KEINE_DATEN'){
+      panel.innerHTML='<div class="sd-empty">Diese Daten werden derzeit ergänzt.</div>';
+      return;
     }
-    return;
-  }
 
-  if(typ==='ergebnisse'){
-    ladeTeamErgebnisse_(teamId,teamName);
-    return;
-  }
+    renderFn(panel, rows, team.Verein_Name||'', team.TeamSL_Teamname||'');
+    if(_sdTeamCache[feldName]) _sdTeamCache[feldName][key]=true;
 
-  if(typ==='spielplan'){
-    ladeTeamSpieltermine_(teamId,teamName);
+  }catch(err){
+    panel.innerHTML='<div class="sd-empty">Diese Daten werden derzeit ergänzt.</div>';
+    console.warn('_ladeBbkTeamPanel_ '+action+':',err);
   }
 }
 
-function _teamMatch_(row, teamId, teamName){
-  const rid=String(row.Team_ID||row.team_id||'').trim();
-  if(rid && teamId && rid===String(teamId)) return true;
+async function ladeTeamErgebnisse_(teamId,teamName){
+  const panel=document.getElementById('sd-ergebnisse-'+teamId);
+  if(!panel) return;
 
-  const n=String(teamName||'').toLowerCase();
-  const heim=fixU(row.heim||row.Heim||'').toLowerCase();
-  const gast=fixU(row.gast||row.Gast||'').toLowerCase();
+  const team=_findTeam_(teamId);
 
-  // Nur als Fallback, falls der Endpunkt keine Team_ID mitliefert.
-  const woerter=n.split(/\s+/).filter(w=>w.length>3);
-  return !!woerter.length && woerter.some(w=>heim.includes(w)||gast.includes(w));
+  if(_istBbkSportTeam_(team)){
+    return _ladeBbkTeamPanel_(
+      panel, team, 'getBbkErgebnisse', 'ergebnisse', bbkRenderSbErgebnisse_
+    );
+  }
+
+  // Legacy fallback
+  if(panel.dataset.loaded==='1') return;
+  panel.innerHTML='<div class="sd-loading">Lade Ergebnisse…</div>';
+  try{
+    const url=GAS+'?action=getErgebnisse&kundenId='+encodeURIComponent(KUNDE);
+    const resp=await fetch(url);
+    const data=await resp.json();
+    const rows=(data && data.success && Array.isArray(data.ergebnisse)) ? data.ergebnisse : [];
+    const teamRows=rows.filter(r=>String(r.Team_ID||r.team_id||'')===String(teamId));
+    if(!teamRows.length){
+      panel.innerHTML='<div class="sd-empty">Keine Ergebnisse für diese Mannschaft verfügbar.</div>';
+    }else{
+      _renderTeamGameCards_(panel,teamRows,true);
+    }
+    panel.dataset.loaded='1';
+  }catch(err){
+    panel.innerHTML='<div class="sd-empty">Ergebnisse konnten nicht geladen werden.</div>';
+  }
 }
 
-function _parseGameDate_(row){
-  const raw=row.datum||row.Datum||'';
-  if(!raw) return null;
+async function ladeTeamSpieltermine_(teamId,teamName){
+  const panel=document.getElementById('sd-spielplan-'+teamId);
+  if(!panel) return;
 
-  // DD.MM.YYYY
-  const m=String(raw).match(/^(\d{2})\.(\d{2})\.(\d{4})/);
-  if(m) return new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),12,0,0);
+  const team=_findTeam_(teamId);
 
-  const d=new Date(raw);
-  return isNaN(d) ? null : d;
-}
+  if(_istBbkSportTeam_(team)){
+    return _ladeBbkTeamPanel_(
+      panel, team, 'getBbkSpielplan', 'spielplan', bbkRenderSbSpielplan_
+    );
+  }
 
-function _fmtGameDate_(row){
-  const raw=row.datum||row.Datum||'';
-  if(/^\d{2}\.\d{2}\.\d{4}/.test(String(raw))) return String(raw).substring(0,10);
-  const d=_parseGameDate_(row);
-  return d ? d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) : String(raw||'');
-}
-
-function _fmtGameTime_(row){
-  const raw=row.uhrzeit||row.Uhrzeit||'';
-  if(!raw) return '';
-  if(/^\d{2}:\d{2}/.test(String(raw))) return String(raw).substring(0,5);
-  const d=new Date(raw);
-  return isNaN(d) ? String(raw) : d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-}
-
-async function _ladeTeamSpieleBasis_(teamId,teamName){
-  const key=String(teamId||teamName||'');
-  if(_sdTeamCache.ergebnisse[key]) return _sdTeamCache.ergebnisse[key];
-
-  const url=GAS+'?action=getErgebnisse&kundenId='+encodeURIComponent(KUNDE);
-  const resp=await fetch(url);
-  const data=await resp.json();
-  const rows=(data && data.success && Array.isArray(data.ergebnisse)) ? data.ergebnisse : [];
-  const teamRows=rows.filter(r=>_teamMatch_(r,teamId,teamName));
-
-  _sdTeamCache.ergebnisse[key]=teamRows;
-  return teamRows;
+  // Legacy fallback: alte Quelle hat keinen echten Spielplan-Endpunkt.
+  panel.innerHTML='<div class="sd-empty">Spieltermine sind für diese Datenquelle noch nicht verfügbar.</div>';
 }
 
 function _renderTeamGameCards_(panel, rows, showScore){
@@ -2875,9 +2866,8 @@ function _renderTeamGameCards_(panel, rows, showScore){
     const heim=fixU(r.heim||r.Heim||'');
     const gast=fixU(r.gast||r.Gast||'');
     const score=String(r.endstand||r.Endstand||r.ergebnis||r.Ergebnis||'').replace(/\s/g,'');
-    const datum=_fmtGameDate_(r);
-    const zeit=_fmtGameTime_(r);
-
+    const datum=String(r.datum||r.Datum||'');
+    const zeit=String(r.uhrzeit||r.Uhrzeit||'');
     return `<div class="erg-card">
       <div class="erg-date">
         <span class="erg-date-day">${esc(datum)}</span>
@@ -2890,52 +2880,6 @@ function _renderTeamGameCards_(panel, rows, showScore){
       ${showScore?`<div class="erg-score">${esc(score||'–:–')}</div>`:''}
     </div>`;
   }).join('')+'</div>';
-}
-
-async function ladeTeamErgebnisse_(teamId,teamName){
-  const panel=document.getElementById('sd-ergebnisse-'+teamId);
-  if(!panel) return;
-  if(panel.dataset.loaded==='1') return;
-
-  panel.innerHTML='<div class="sd-loading">Lade Ergebnisse…</div>';
-  try{
-    const rows=await _ladeTeamSpieleBasis_(teamId,teamName);
-    const mitErgebnis=rows.filter(r=>{
-      const s=String(r.endstand||r.Endstand||r.ergebnis||r.Ergebnis||'').trim();
-      const d=_parseGameDate_(r);
-      return !!s || (d && d < new Date());
-    }).sort((a,b)=>(_parseGameDate_(b)||0)-(_parseGameDate_(a)||0));
-
-    _renderTeamGameCards_(panel,mitErgebnis,true);
-    panel.dataset.loaded='1';
-  }catch(err){
-    panel.innerHTML='<div class="sd-empty">Ergebnisse konnten nicht geladen werden.</div>';
-    console.warn('ladeTeamErgebnisse_:',err);
-  }
-}
-
-async function ladeTeamSpieltermine_(teamId,teamName){
-  const panel=document.getElementById('sd-spielplan-'+teamId);
-  if(!panel) return;
-  if(panel.dataset.loaded==='1') return;
-
-  panel.innerHTML='<div class="sd-loading">Lade Spieltermine…</div>';
-  try{
-    const rows=await _ladeTeamSpieleBasis_(teamId,teamName);
-    const heute=new Date(); heute.setHours(0,0,0,0);
-
-    const kommende=rows.filter(r=>{
-      const s=String(r.endstand||r.Endstand||r.ergebnis||r.Ergebnis||'').trim();
-      const d=_parseGameDate_(r);
-      return !s && (!d || d>=heute);
-    }).sort((a,b)=>(_parseGameDate_(a)||0)-(_parseGameDate_(b)||0));
-
-    _renderTeamGameCards_(panel,kommende,false);
-    panel.dataset.loaded='1';
-  }catch(err){
-    panel.innerHTML='<div class="sd-empty">Spieltermine konnten nicht geladen werden.</div>';
-    console.warn('ladeTeamSpieltermine_:',err);
-  }
 }
 
 function sdTab(el, panelId){
@@ -2952,95 +2896,57 @@ function sdTab(el, panelId){
 
 // ── Sportdaten: Tabelle laden ─────────────────────────────
 async function ladeSportTabelle(teamId, teamName){
-  const panelId='sd-tabelle-'+teamId;
-  const panel=document.getElementById(panelId);
-  if(!panel)return;
+  const panel=document.getElementById('sd-tabelle-'+teamId);
+  if(!panel) return;
 
+  const team=_findTeam_(teamId);
+
+  // Neue 2026/27-Sportquelle: gleicher funktionierender Weg wie V006.
+  if(_istBbkSportTeam_(team)){
+    return _ladeBbkTeamPanel_(
+      panel, team, 'getBbkTabelle', 'tabelle', bbkRenderSbTabelle_
+    );
+  }
+
+  // Alter Vereinsweg nur als Fallback für Kunden ohne BBK_Spielbetrieb.
   try{
     const url=GAS+'?action=getTabellen&kundenId='+encodeURIComponent(KUNDE)+'&teamId='+encodeURIComponent(teamId);
     const resp=await fetch(url);
     const data=await resp.json();
 
     if(!data.success||!data.tabellen||!data.tabellen.length){
-      const wrap=panel.closest('.sd-wrap');
-      if(wrap)wrap.style.display='none';
-      return;
+      panel.innerHTML='<div class="sd-empty">Keine Tabelle verfügbar.</div>';
+      return; // WICHTIG: Tabs NICHT mehr verstecken.
     }
 
     const tab=data.tabellen[0];
     const zeilen=tab.zeilen||[];
     if(!zeilen.length){
-      const wrap=panel.closest('.sd-wrap');
-      if(wrap)wrap.style.display='none';
+      panel.innerHTML='<div class="sd-empty">Keine Tabelle verfügbar.</div>';
       return;
     }
 
-    // Fix 1: Umlaut-Korrektur (ISO-8859-1 Reste bereinigen)
-    function fixUmlaute(s){
-      return String(s||'')
-        .replace(/Ã¼/g,'ü').replace(/Ã¶/g,'ö').replace(/Ã¤/g,'ä')
-        .replace(/Ã\u009c/g,'Ü').replace(/Ã–/g,'Ö').replace(/Ã„/g,'Ä')
-        .replace(/ÃŸ/g,'ß').replace(/Ã\u009f/g,'ß')
-        .replace(/SÃ¼/g,'Sü').replace(/WeiÃŸ/g,'Weiß')
-        .replace(/DÃ¼/g,'Dü').replace(/GiÃ¼/g,'Giü');
-    }
-
-    // Fix 2: Datum formatieren ("Mon Jun 29 2026..." → "29.06.2026 11:01 Uhr")
-    function fmtAktualisiert(s){
-      if(!s)return'';
-      // Bereits im Format "29.06.2026 11:01" → direkt verwenden
-      if(/^\d{2}\.\d{2}\.\d{4}/.test(s))return s+' Uhr';
-      // JS-Datum-String parsen
-      try{
-        const d=new Date(s);
-        if(isNaN(d))return s;
-        const pad=n=>String(n).padStart(2,'0');
-        return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes())+' Uhr';
-      }catch{return s;}
-    }
-
-    // Fix 3: Eigenes Team erkennen anhand globalem Vereinsname (aus Branding)
-    // _vereinsName z.B. "Verein Name" → Wörter mit >4 Zeichen
-    const vWoerter=(_vereinsName||'').toLowerCase()
-      .split(/\s+/).filter(w=>w.length>4);
-
-    const rows=zeilen.map(z=>{
-      const tn=fixUmlaute(z.Team_Name||z.teamName||z.teamname||z.Team||'');
-      const tnLower=tn.toLowerCase();
-      const istEigen=vWoerter.length>0&&vWoerter.some(w=>tnLower.includes(w));
-
-      // Fix 4: Punkte selbst berechnen (Basketball: Sieg=2Pkt, Niederlage=1Pkt)
-      const siege=Number(z.Siege||z.siege)||0;
-      const niederlagen=Number(z.Niederlagen||z.niederlagen)||0;
-      const punkte=(siege*2)+niederlagen;
-
-      return`<tr class="${istEigen?'eigenes-team':''}">
-        <td class="sd-rang">${z.Rang||z.rang||''}</td>
-        <td class="sd-teamname">${esc(tn)}${istEigen?' ◀':''}</td>
-        <td class="r">${z.Spiele||z.spiele||''}</td>
-        <td class="r">${siege}</td>
-        <td class="r">${niederlagen}</td>
-        <td class="r" style="font-weight:700;">${punkte}</td>
-      </tr>`;
-    }).join('');
-
+    const suchname=(tab.suchname||teamName||'').toLowerCase();
     panel.innerHTML=`
       <table class="sd-table">
-        <thead><tr>
-          <th style="width:24px">#</th>
-          <th>Team</th>
-          <th class="r">Sp.</th>
-          <th class="r">S</th>
-          <th class="r">N</th>
-          <th class="r">Pkt.</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      ${tab.aktualisiert?`<div class="sd-updated">Stand: ${fmtAktualisiert(tab.aktualisiert)}</div>`:''}
-    `;
+        <thead><tr><th class="sd-rang">#</th><th>Team</th><th class="r">Sp.</th><th class="r">S</th><th class="r">N</th><th class="r">Pkt.</th></tr></thead>
+        <tbody>${zeilen.map((z,i)=>{
+          const tn=fixU(z.Team_Name||z.teamName||z.teamname||z.Teamname||z.Team||'');
+          const suchwoerter=suchname.split(' ').filter(w=>w.length>3);
+          const istWir=suchname&&suchwoerter.some(w=>tn.toLowerCase().includes(w.toLowerCase()));
+          return `<tr${istWir?' class="eigenes-team"':''}>
+            <td class="sd-rang">${z.Rang||z.rang||i+1}</td>
+            <td class="sd-teamname">${esc(tn)}${istWir?' ◄':''}</td>
+            <td class="r">${z.Spiele||z.spiele||''}</td>
+            <td class="r">${z.Siege||z.siege||''}</td>
+            <td class="r">${z.Niederlagen||z.niederlagen||''}</td>
+            <td class="r">${z.Punkte||z.punkte||''}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
 
   }catch(err){
-    panel.innerHTML=`<div class="sd-empty">Tabelle konnte nicht geladen werden.</div>`;
+    panel.innerHTML='<div class="sd-empty">Tabelle konnte nicht geladen werden.</div>';
     console.warn('ladeSportTabelle Fehler:',err);
   }
 }
