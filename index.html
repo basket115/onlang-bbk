@@ -1873,6 +1873,18 @@ function kid(){
 const KUNDE=kid();
 
 // ═══════════════════════════════════════════════════════
+// DEMO-MODUS  –  präsentationssichere, schlanke Version
+// -------------------------------------------------------
+//   true  = Spielbetrieb komplett ausgeblendet (KEIN Live-Zugriff auf
+//           Motor / basketball-bund.net), kein Text an der Stelle.
+//           Vereins-/BBK-TV nur als Button zur externen TV-Seite
+//           (reiner Link, kein iframe – kostet den Motor nichts).
+//   false = ursprüngliches Verhalten, nichts geht verloren (voll reversibel).
+// Betrifft AUSSCHLIESSLICH diese Datei (onlang-bbk). template7 bleibt unberührt.
+// ═══════════════════════════════════════════════════════
+const DEMO_MODUS = true;
+
+// ═══════════════════════════════════════════════════════
 // TEMPLATE7 – MANDANTENSTEUERUNG PHASE 1
 // Eine index.html, aber unterschiedliche Module je Kunden-ID.
 // V006 = BBK-Kreisplattform; alle anderen IDs = Vereinswebsite.
@@ -1883,7 +1895,7 @@ const TENANT = {
   modules: {
     bbk: KUNDE === 'V006',
     mitgliedsvereine: KUNDE === 'V006',
-    bbkSpielbetrieb: KUNDE === 'V006',
+    bbkSpielbetrieb: !DEMO_MODUS && KUNDE === 'V006',
     bbkAllgemein: KUNDE === 'V006',
     teams: true,
     sports: true,
@@ -1976,9 +1988,45 @@ function tenantInitTv_(){
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// DEMO: Schwere Bereiche abschalten – läuft AUCH im BBK-Fall
+// (tenantApplyStaticLayout_ wird bei isBbk übersprungen, deshalb hier separat).
+//   • Spielbetrieb: Bereich ausblenden, ohne Text, Links entfernen.
+//     Modul bbkSpielbetrieb ist bereits false → keine getBbk…-Aufrufe.
+//   • TV: iframe-Einbettung durch Button ersetzen, der die externe
+//     TV-Seite in neuem Tab öffnet (wie template7).
+// ═══════════════════════════════════════════════════════
+function demoSchalteSchwereBereicheAus_(){
+  if(!DEMO_MODUS) return;
+
+  // — Spielbetrieb komplett ausblenden (kein Text) —
+  const sp=document.getElementById('spielbetrieb');
+  if(sp) sp.style.display='none';
+  // Alle Links/Buttons, die auf #spielbetrieb zeigen (Nav, Mobile-Nav, Hero).
+  document.querySelectorAll('a[href="#spielbetrieb"]').forEach(a=>a.remove());
+  // Hero-Banner-Link zeigt sonst auf #spielbetrieb → auf News umlenken.
+  const heroLink=document.getElementById('bbk-hero-banner-link');
+  if(heroLink) heroLink.setAttribute('href','#aktuelles');
+
+  // — TV: externe Seite als Button statt iframe —
+  const tvFrame=document.getElementById('tenant-tv-frame');
+  const tvSrc='https://onlang-tv.netlify.app/?kunde='+encodeURIComponent(KUNDE);
+  if(tvFrame){
+    const shell=tvFrame.parentElement;
+    if(shell){
+      shell.innerHTML=
+        '<div style="text-align:center;padding:48px 24px;">'
+        +'<a href="'+tvSrc+'" target="_blank" rel="noopener" class="hdr-btn" '
+        +'style="position:static;display:inline-block;font-size:16px;padding:14px 28px;">▶ BBK-TV öffnen</a>'
+        +'</div>';
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
+  demoSchalteSchwereBereicheAus_();
   tenantApplyStaticLayout_();
-  tenantInitTv_();
+  if(!DEMO_MODUS) tenantInitTv_();   // im Demo-Modus kein iframe-Loader
 });
 
 // ── Globale Hilfsfunktionen ──────────────────────────────
@@ -2228,7 +2276,7 @@ async function init(){
       });
     }
     renderTeams(teams,br);
-    renderVereinSpielbetrieb_(teams);
+    if(!DEMO_MODUS) renderVereinSpielbetrieb_(teams);
     renderEvs(evs);
     // Sponsoren werden erst beim Annähern an den Bereich geladen.
     initSponsorsLazy_(br,sponsor,bootstrapSponsors);
