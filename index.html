@@ -2259,8 +2259,8 @@ async function init(){
     applyBranding(br);
     ladeSportband();
     renderHero(news,br);
-    renderBbkHeroBanner();   // Sheet-Banner (ONLANG_BANNER, Kunden_ID=V006) laden
-    // BBK-Hero-Sponsoren werden mit dem späteren Sponsor-Request ergänzt.
+    // BBK-Hero-Banner wird unabhängig von init() geladen (eigener Starter unten),
+    // damit ein Fehler an anderer Stelle in init() ihn nicht überspringt.
     // News Cards: ab Index 1 — falls weniger als 2 Beiträge, trotzdem anzeigen ab Index 0
     const nvBeitraege = news.length > 1 ? news.slice(1,7) : news.slice(0,6);
     renderNewsV1(nvBeitraege,br);
@@ -3391,6 +3391,13 @@ function initNav(){
 }
 
 function toggleNav(){document.getElementById('mob-nav').classList.toggle('open');}
+
+// BBK-Hero-Banner unabhängig starten – eigener Fehler-Schutz, damit er auch
+// dann lädt, wenn init() an anderer Stelle abbricht.
+(function startBbkBanner_(){
+  try{ renderBbkHeroBanner(); }
+  catch(e){ console.warn('[BBK Banner] Starter-Fehler:', e); }
+})();
 
 init();
 </script>
