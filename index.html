@@ -2193,7 +2193,7 @@ function ladeSponsorsSpaeter_(br, studioSponsor, bootstrapSponsors){
   _sponsorenGeladen=true;
   const sponsors=Array.isArray(bootstrapSponsors)?bootstrapSponsors:[];
   renderSponsors(sponsors,br,studioSponsor||null);
-  if(TENANT.isBbk) renderBbkHeroBanner();
+  // Hinweis: BBK-Hero-Banner wird jetzt sofort in init() geladen (nicht mehr lazy).
 }
 
 function initSponsorsLazy_(br,studioSponsor,bootstrapSponsors){
@@ -2259,6 +2259,7 @@ async function init(){
     applyBranding(br);
     ladeSportband();
     renderHero(news,br);
+    renderBbkHeroBanner();   // Sheet-Banner (ONLANG_BANNER, Kunden_ID=V006) laden
     // BBK-Hero-Sponsoren werden mit dem späteren Sponsor-Request ergänzt.
     // News Cards: ab Index 1 — falls weniger als 2 Beiträge, trotzdem anzeigen ab Index 0
     const nvBeitraege = news.length > 1 ? news.slice(1,7) : news.slice(0,6);
@@ -3125,7 +3126,12 @@ async function renderBbkHeroBanner(){
 
   try{
     const r = await api({action:'get_banners', kundenId:KUNDE});
-    if(!r || !r.success || !Array.isArray(r.banners) || !r.banners.length) return; // lokaler Fallback bleibt bestehen
+    // Diagnose (F12 → Konsole): zeigt, was das Sheet ONLANG_BANNER für V006 liefert.
+    console.info('[BBK Banner] get_banners für', KUNDE, '→', r);
+    if(!r || !r.success || !Array.isArray(r.banners) || !r.banners.length){
+      console.warn('[BBK Banner] Keine Banner-Zeilen aus dem Sheet für '+KUNDE+' – lokaler Banner bleibt.');
+      return; // lokaler Fallback bleibt bestehen
+    }
 
     const now = Date.now();
     const parseD = (v)=>{
@@ -3154,14 +3160,17 @@ async function renderBbkHeroBanner(){
       })
       .sort((a,b)=>(Number(a.Reihenfolge||a.reihenfolge)||999)-(Number(b.Reihenfolge||b.reihenfolge)||999));
 
-    if(!aktiv.length) return; // lokaler Fallback bleibt bestehen
+    if(!aktiv.length){
+      console.warn('[BBK Banner] Alle Zeilen ausgefiltert (Aktiv/Datum/Bild) – lokaler Banner bleibt.');
+      return; // lokaler Fallback bleibt bestehen
+    }
 
     const b0 = aktiv[0];
     const bild = String(b0.Bild_URL||b0.bild_url||'').trim();
     const ziel = String(b0.Link_URL||b0.link_url||b0.Link||'').trim();
     const text = String(b0.Titel||b0.titel||b0.Untertitel||b0.untertitel||'BBK Digital – Spielbetrieb').trim();
 
-    if(bild) img.src = bild;
+    if(bild){ img.src = bild; console.info('[BBK Banner] Sheet-Banner aktiv:', bild); }
     img.alt = text;
     link.setAttribute('aria-label', text);
 
