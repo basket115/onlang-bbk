@@ -2193,7 +2193,7 @@ function ladeSponsorsSpaeter_(br, studioSponsor, bootstrapSponsors){
   _sponsorenGeladen=true;
   const sponsors=Array.isArray(bootstrapSponsors)?bootstrapSponsors:[];
   renderSponsors(sponsors,br,studioSponsor||null);
-  if(TENANT.isBbk) renderBbkHeroBanner(sponsors);
+  if(TENANT.isBbk) renderBbkHeroBanner();
 }
 
 function initSponsorsLazy_(br,studioSponsor,bootstrapSponsors){
@@ -3116,36 +3116,68 @@ function schliesseArtikel(e){
 document.addEventListener('keydown',e=>{if(e.key==='Escape')schliesseArtikel();});
 
 
-// BBK Hero-Banner: bevorzugt Sponsor_Inhalte Slot=HERO_RIGHT.
-// Ohne gepflegte Sheet-Zeile bleibt die mitgelieferte lokale Grafik sichtbar.
-function renderBbkHeroBanner(sponsors){
+// BBK Hero-Banner: ONLANG_BANNER (Kunden_ID=V006) steuert den rechten Banner.
+// Ohne gültigen aktiven Sheet-Eintrag bleibt die mitgelieferte lokale Grafik sichtbar.
+async function renderBbkHeroBanner(){
   const img = document.getElementById('bbk-hero-banner-img');
   const link = document.getElementById('bbk-hero-banner-link');
   if(!img || !link) return;
 
-  const liste = Array.isArray(sponsors) ? sponsors : [];
-  const istAktiv = s => !['FALSE','NEIN','0','INAKTIV'].includes(String(s.Aktiv ?? s.aktiv ?? 'TRUE').trim().toUpperCase());
-  const slot = liste.find(s =>
-    String(s.Slot || s.slot || '').trim().toUpperCase() === 'HERO_RIGHT' &&
-    istAktiv(s)
-  );
+  try{
+    const r = await api({action:'get_banners', kundenId:KUNDE});
+    if(!r || !r.success || !Array.isArray(r.banners) || !r.banners.length) return; // lokaler Fallback bleibt bestehen
 
-  if(!slot) return; // lokaler Fallback bleibt bestehen
+    const now = Date.now();
+    const parseD = (v)=>{
+      if(!v) return null;
+      const s = String(v).trim();
+      const d = new Date(s);
+      if(!isNaN(d.getTime())) return d.getTime();
+      const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      return m ? new Date(+m[3],+m[2]-1,+m[1]).getTime() : null;
+    };
 
-  const bild = String(slot.Banner_Bild_URL || slot.banner_bild_url || '').trim();
-  const ziel = String(slot.Banner_Link_URL || slot.banner_link_url || '').trim();
-  const text = String(slot.Banner_Text || slot.banner_text || 'BBK Digital – Spielbetrieb').trim();
+    const aktiv = r.banners
+      .filter(b=>{
+        const kundenId = String(b.Kunden_ID||b.kunden_id||'').trim().toUpperCase();
+        if(kundenId !== String(KUNDE).toUpperCase()) return false;
 
-  if(bild) img.src = bild;
-  img.alt = text;
-  link.setAttribute('aria-label', text);
+        const status = String(b.Aktiv??b.aktiv??'').trim().toUpperCase();
+        if(status && !['JA','TRUE','1'].includes(status)) return false;
 
-  if(ziel){
-    link.href = ziel;
-    if(/^https?:\/\//i.test(ziel)){
-      link.target = '_blank';
-      link.rel = 'noopener';
+        const start = parseD(b.Startdatum||b.startdatum||b.Banner_Start||b.banner_start);
+        const ende = parseD(b.Enddatum||b.enddatum||b.Banner_Ende||b.banner_ende);
+        if(start && now < start) return false;
+        if(ende && now > ende) return false;
+
+        return String(b.Bild_URL||b.bild_url||'').trim() !== '';
+      })
+      .sort((a,b)=>(Number(a.Reihenfolge||a.reihenfolge)||999)-(Number(b.Reihenfolge||b.reihenfolge)||999));
+
+    if(!aktiv.length) return; // lokaler Fallback bleibt bestehen
+
+    const b0 = aktiv[0];
+    const bild = String(b0.Bild_URL||b0.bild_url||'').trim();
+    const ziel = String(b0.Link_URL||b0.link_url||b0.Link||'').trim();
+    const text = String(b0.Titel||b0.titel||b0.Untertitel||b0.untertitel||'BBK Digital – Spielbetrieb').trim();
+
+    if(bild) img.src = bild;
+    img.alt = text;
+    link.setAttribute('aria-label', text);
+
+    if(ziel){
+      link.href = ziel;
+      if(/^https?:\/\//i.test(ziel)){
+        link.target = '_blank';
+        link.rel = 'noopener';
+      }else{
+        link.removeAttribute('target');
+        link.removeAttribute('rel');
+      }
     }
+  }catch(e){
+    // Bei Fehlern bleibt die vorhandene lokale BBK-Grafik unverändert.
+    console.warn('[BBK] ONLANG_BANNER nicht verfügbar – lokaler Banner bleibt:',e);
   }
 }
 
