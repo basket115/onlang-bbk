@@ -3120,9 +3120,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')schliesseArtikel();}
 // BBK Hero-Banner: ONLANG_BANNER (Kunden_ID=V006) steuert den rechten Banner.
 // Ohne gültigen aktiven Sheet-Eintrag bleibt die mitgelieferte lokale Grafik sichtbar.
 async function renderBbkHeroBanner(){
-  const img = document.getElementById('bbk-hero-banner-img');
-  const link = document.getElementById('bbk-hero-banner-link');
-  if(!img || !link) return;
+  // Wir bauen den rechten Hero-Bereich neu auf; die alten img/link-Elemente
+  // werden dabei ersetzt. Nur der Container muss existieren.
+  const rightColCheck = document.querySelector('.bbk-hero-right');
+  if(!rightColCheck) return;
 
   try{
     const r = await api({action:'get_banners', kundenId:KUNDE});
@@ -3168,21 +3169,33 @@ async function renderBbkHeroBanner(){
     const b0 = aktiv[0];
     const bild = String(b0.Bild_URL||b0.bild_url||'').trim();
     const ziel = String(b0.Link_URL||b0.link_url||b0.Link||'').trim();
-    const text = String(b0.Titel||b0.titel||b0.Untertitel||b0.untertitel||'BBK Digital – Spielbetrieb').trim();
+    const text = String(b0.Titel||b0.titel||b0.Untertitel||b0.untertitel||'BBK Digital').trim();
 
-    if(bild){ img.src = bild; console.info('[BBK Banner] Sheet-Banner aktiv:', bild); }
-    img.alt = text;
-    link.setAttribute('aria-label', text);
+    if(!bild){ console.warn('[BBK Banner] Keine Bild_URL – lokaler Banner bleibt.'); return; }
 
-    if(ziel){
-      link.href = ziel;
-      if(/^https?:\/\//i.test(ziel)){
-        link.target = '_blank';
-        link.rel = 'noopener';
-      }else{
-        link.removeAttribute('target');
-        link.removeAttribute('rel');
-      }
+    // Ziel/Link bestimmen (im Demo-Modus nicht auf #spielbetrieb, der ist aus).
+    const href = ziel || (typeof DEMO_MODUS!=='undefined' && DEMO_MODUS ? '#aktuelles' : '#spielbetrieb');
+    const extern = /^https?:\/\//i.test(href);
+    const targetAttr = extern ? ' target="_blank" rel="noopener"' : '';
+
+    // Den kompletten bbk-hero-right-Container mit einem SICHTBAREN Banner neu
+    // aufbauen (robuste Inline-Styles, unabhängig vom alten bbk-hero-banner-CSS).
+    // Das ist derselbe Ansatz wie bei template7: Banner-Element frisch in den
+    // Slot rendern, statt nur ein verstecktes img zu tauschen.
+    const rightCol = document.querySelector('.bbk-hero-right');
+    if(rightCol){
+      rightCol.innerHTML =
+        '<a href="'+esc(href)+'"'+targetAttr+' aria-label="'+esc(text)+'" '
+        +'style="display:block;width:100%;border-radius:16px;overflow:hidden;'
+        +'border:1px solid rgba(255,255,255,.16);box-shadow:0 2px 8px rgba(0,0,0,.25);'
+        +'background:var(--card);text-decoration:none;">'
+        +'<img src="'+esc(bild)+'" alt="'+esc(text)+'" '
+        +'style="display:block;width:100%;height:auto;max-height:460px;object-fit:cover;background:var(--card);" '
+        +'onerror="this.style.display=\'none\'">'
+        +'</a>';
+      console.info('[BBK Banner] Sheet-Banner sichtbar gerendert:', bild);
+    } else {
+      console.warn('[BBK Banner] bbk-hero-right nicht gefunden.');
     }
   }catch(e){
     // Bei Fehlern bleibt die vorhandene lokale BBK-Grafik unverändert.
